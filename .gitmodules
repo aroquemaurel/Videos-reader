@@ -1,6 +1,3 @@
-[submodule "gst-sdk-tutorials"]
-	path = examples/gst-sdk-tutorials
-	url = git://anongit.freedesktop.org/gstreamer-sdk/gst-sdk-tutorials
 [submodule "examples/gst-player"]
 	path = examples/gst-player
 	url = https://github.com/felipec/gst-player.git
