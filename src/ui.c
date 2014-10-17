@@ -16,10 +16,12 @@ static GtkWindow *window;
 static GtkWidget *controls;
 
 #define DURATION_IS_VALID(x) (x != 0 && x != (guint64) -1)
+Ui* Ui::_ui = 0;
 
 Ui::Ui() {
-
+	Ui::_ui = this;
 }
+
 void Ui::toggle_paused (void) {
 	static gboolean paused = FALSE;
 	if (paused) {
@@ -44,7 +46,7 @@ void Ui::toggle_fullscreen (void) {
 }
 
 void Ui::pause_cb (GtkWidget *widget, gpointer data) {
-	toggle_paused();
+	_ui->toggle_paused();
 }
 
 void Ui::reset_cb (GtkWidget *widget, gpointer data) {
@@ -65,12 +67,12 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 		case GDK_P:
 		case GDK_p:
 		case GDK_space:
-			Ui::toggle_paused ();
+			_ui->toggle_paused ();
 			break;
 		case GDK_F11:
 		case GDK_F:
 		case GDK_f:
-		toggle_fullscreen ();
+		_ui->toggle_fullscreen ();
 			break;
 		case GDK_R:
 		case GDK_r:
@@ -94,11 +96,7 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 	return TRUE;
 }
 
-	static void
-seek_cb (GtkRange *range,
-		GtkScrollType scroll,
-		gdouble value,
-		gpointer data)
+	static void seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
 {
 	guint64 to_seek;
 
@@ -110,12 +108,6 @@ seek_cb (GtkRange *range,
 
 	to_seek = (value / 100) * duration;
 
-#if 0
-	g_print ("value: %f\n", value);
-	g_print ("duration: %llu\n", duration);
-	g_print ("seek: %llu\n", to_seek);
-#endif
-
 	backend_seek_absolute (to_seek);
 }
 
@@ -124,7 +116,7 @@ void Ui::realize_cb (GtkWidget * widget, gpointer data) {
 
 	gdk_window_ensure_native (window);
 	backend_set_window (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
-	Ui::toggle_fullscreen ();
+	_ui->toggle_fullscreen ();
 }
 
 void Ui::start (void) {
@@ -225,8 +217,8 @@ std::string Ui::getFileName() {
 }
 
 gboolean Ui::init (gpointer data) {
-	if (filename)
-		backend_play (filename);
+	if (!_ui->getFileName().empty())
+		backend_play (_ui->getFileName().c_str());
 
 	g_timeout_add (1000, timeout, NULL);
 
@@ -241,16 +233,15 @@ int main (int argc, char *argv[]) {
 	ui.start();
 
 	if (argc > 1) {
-		filename = g_strdup (argv[1]);
+		ui.setFileName(g_strdup (argv[1]));
 	}
 
 	g_idle_add(Ui::init, NULL);
 
 	gtk_main();
 
-	g_free(filename);
-
 	backend_deinit();
 
 	return 0;
 }
+

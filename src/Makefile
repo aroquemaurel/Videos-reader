@@ -1,6 +1,6 @@
 CC := g++
 
-EXTRA_WARNINGS := -Wextra -ansi -std=c99 -Wno-unused-parameter
+EXTRA_WARNINGS := -Wextra -ansi -std=c++98 -Wno-unused-parameter
 
 GST_LIBS := $(shell pkg-config --libs gstreamer-0.10 gstreamer-interfaces-0.10)
 GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10 gstreamer-interfaces-0.10)
@@ -9,7 +9,7 @@ GTK_CFLAGS := $(shell pkg-config --cflags gtk+-2.0)
 
 CFLAGS := -ggdb -Wall $(EXTRA_WARNINGS)
 
-gst-player: ui.o gst-backend.o
+gst-player: ui.o gst-backend.o 
 gst-player: CFLAGS := $(CFLAGS) $(GTK_CFLAGS) $(GST_CFLAGS)
 gst-player: LIBS := $(LIBS) $(GTK_LIBS) $(GST_LIBS)
 binaries += gst-player
