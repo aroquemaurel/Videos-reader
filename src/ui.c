@@ -72,7 +72,7 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 		case GDK_F11:
 		case GDK_F:
 		case GDK_f:
-		_ui->toggle_fullscreen ();
+			_ui->toggle_fullscreen ();
 			break;
 		case GDK_R:
 		case GDK_r:
@@ -96,7 +96,7 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 	return TRUE;
 }
 
-	static void seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
+static void seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
 {
 	guint64 to_seek;
 
