@@ -1,13 +1,7 @@
-#include <gtk/gtk.h>
-#include <gdk/gdkx.h>
-#include <gdk/gdkkeysyms.h>
-
-#include <string.h>
-
 #include "ui.h"
 #include "gst-backend.h"
+#include "player.h"
 
-static gchar *filename;
 static GtkWidget *video_output;
 static GtkWidget *pause_button;
 static GtkWidget *scale;
@@ -33,11 +27,11 @@ void Ui::toggle_paused (void) {
 	static gboolean paused = FALSE;
 	if (paused) {
         _back->backend_resume ();
-		gtk_button_set_label (GTK_BUTTON (pause_button), "Pause");
+        gtk_button_set_label (GTK_BUTTON (pause_button), "Pause");
 		paused = FALSE;
 	} else {
         _back->backend_pause ();
-		gtk_button_set_label (GTK_BUTTON (pause_button), "Resume");
+        gtk_button_set_label (GTK_BUTTON (pause_button), "Resume");
 		paused = TRUE;
 	}
 }
@@ -178,7 +172,7 @@ void Ui::start (Backend* back) {
 		gtk_box_pack_start (GTK_BOX (controls), button, FALSE, FALSE, 2);
 	}
 
-	{
+    {
 		GtkObject *adjustment;
 		adjustment = gtk_adjustment_new (0, 0, 101, 1, 5, 1);
 		scale = gtk_hscale_new (GTK_ADJUSTMENT (adjustment));
@@ -224,24 +218,10 @@ std::string Ui::getFileName() {
 }
 
 gboolean Ui::init (gpointer data) {
-	if (!_ui->getFileName().empty())
+    if (!_ui->getFileName().empty())
         _back->backend_play (_ui->getFileName().c_str());
 
 	g_timeout_add (1000, timeout, NULL);
 
 	return FALSE;
 }
-
-int main (int argc, char *argv[]) {
-    Ui ui = Ui((argc > 1) ? argv[1] : "");
-    Backend* back = new Backend(&argc, &argv);
-	gtk_init(&argc, &argv);
-    ui.start(back);
-
-	g_idle_add(Ui::init, NULL);
-
-	gtk_main();
-    delete back;
-	return 0;
-}
-

@@ -1,7 +1,10 @@
-gst-backend.c
+gst-backend.cpp
 gst-backend.h
-lecteuraudio.c
-lecteuraudiovideo.c
+lecteuraudio.cpp
+lecteuraudiovideo.cpp
 Makefile
-ui.c
+ui.cpp
 ui.h
+player.h
+player.cpp
+main.cpp

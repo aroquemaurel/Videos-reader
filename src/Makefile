@@ -9,17 +9,17 @@ GTK_CFLAGS := $(shell pkg-config --cflags gtk+-2.0)
 
 CFLAGS := -ggdb -Wall $(EXTRA_WARNINGS)
 
-gst-player: ui.o gst-backend.o 
-gst-player: CFLAGS := $(CFLAGS) $(GTK_CFLAGS) $(GST_CFLAGS)
-gst-player: LIBS := $(LIBS) $(GTK_LIBS) $(GST_LIBS)
-binaries += gst-player
+player: ui.o gst-backend.o player.o main.o
+player: CFLAGS := $(CFLAGS) $(GTK_CFLAGS) $(GST_CFLAGS)
+player: LIBS := $(LIBS) $(GTK_LIBS) $(GST_LIBS)
+binaries += player
 
 all: $(binaries)
 
 $(binaries):
 	$(CC) $(LDFLAGS) $(LIBS) -o $@ $^
 
-%.o:: %.c
+%.o: %.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:

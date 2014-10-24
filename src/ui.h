@@ -1,7 +1,9 @@
 #ifndef __UI
 #define __UI
-#include <string>
 #include <iostream>
+#include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "gst-backend.h"
 class Ui {
@@ -29,8 +31,8 @@ private:
 		static void reset_cb (GtkWidget *widget, gpointer data);
 		static gboolean key_press (GtkWidget *widget, GdkEventKey *event, gpointer data);
 
-        void seek_cb(GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data);
-        gboolean timeout(gpointer data);
+        static void seek_cb(GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data);
+        static gboolean timeout(gpointer data);
 
         static Ui* _ui;
         static Backend* _back;

@@ -1,12 +1,5 @@
-#include <gst/gst.h>
-#include <gst/interfaces/xoverlay.h>
 
 #include "gst-backend.h"
-
-static GstElement *pipeline;
-static GstElement *videosink;
-static gpointer window;
-static GstSeekFlags seek_flags =(GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT);
 
 static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 	switch(GST_MESSAGE_TYPE(msg)) {
@@ -31,20 +24,20 @@ static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 }
 
 void Backend::backend_set_window(gpointer window_) {
-	window = window_;
+    _window = window_;
 }
 
 void Backend::backend_play(const gchar *filename) {
 	backend_stop();
 
-	pipeline = gst_element_factory_make("playbin", "gst-player");
-	videosink = gst_element_factory_make("xvimagesink", "videosink");
+    _pipeline = gst_element_factory_make("playbin", "gst-player");
+    _videosink = gst_element_factory_make("xvimagesink", "_videosink");
 
-	g_object_set(G_OBJECT(pipeline), "video-sink", videosink, NULL);
+    g_object_set(G_OBJECT(_pipeline), "video-sink", _videosink, NULL);
 
 	{
 		GstBus *bus;
-		bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
+        bus = gst_pipeline_get_bus(GST_PIPELINE(_pipeline));
 		gst_bus_add_watch(bus, bus_cb, NULL);
 		gst_object_unref(bus);
 	}
@@ -64,55 +57,55 @@ void Backend::backend_play(const gchar *filename) {
 		}
 
 		g_debug("%s", uri);
-		g_object_set(G_OBJECT(pipeline), "uri", uri, NULL);
+        g_object_set(G_OBJECT(_pipeline), "uri", uri, NULL);
 		g_free(uri);
 	}
 
-	g_object_set(G_OBJECT(videosink), "force-aspect-ratio", TRUE, NULL);
+    g_object_set(G_OBJECT(_videosink), "force-aspect-ratio", TRUE, NULL);
 
-	if(GST_IS_X_OVERLAY(videosink))	{
-		gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(videosink), GPOINTER_TO_INT(window));
+    if(GST_IS_X_OVERLAY(_videosink))	{
+        gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(_videosink), GPOINTER_TO_INT(_window));
 	}
 
-	gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    gst_element_set_state(_pipeline, GST_STATE_PLAYING);
 }
 
 void Backend::backend_stop(void) {
-    if(pipeline) {
-		gst_element_set_state(pipeline, GST_STATE_NULL);
-		gst_object_unref(GST_OBJECT(pipeline));
-		pipeline = NULL;
+    if(_pipeline) {
+        gst_element_set_state(_pipeline, GST_STATE_NULL);
+        gst_object_unref(GST_OBJECT(_pipeline));
+        _pipeline = NULL;
 	}
 }
 
 void Backend::backend_pause(void) {
-	gst_element_set_state(pipeline, GST_STATE_PAUSED);
+    gst_element_set_state(_pipeline, GST_STATE_PAUSED);
 }
 
 void Backend::backend_resume(void) {
-	gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    gst_element_set_state(_pipeline, GST_STATE_PLAYING);
 }
 
 void Backend::backend_reset(void) {
-	gst_element_seek(pipeline, 1.0,
+    gst_element_seek(_pipeline, 1.0,
 			GST_FORMAT_TIME,
-			seek_flags,
+            _seek_flags,
 			GST_SEEK_TYPE_SET, 0,
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
 void Backend::backend_seek(gint value) {
-	gst_element_seek(pipeline, 1.0,
+    gst_element_seek(_pipeline, 1.0,
 			GST_FORMAT_TIME,
-			seek_flags,
+            _seek_flags,
 			GST_SEEK_TYPE_CUR, value * GST_SECOND,
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
 void Backend::backend_seek_absolute(guint64 value) {
-	gst_element_seek(pipeline, 1.0,
+    gst_element_seek(_pipeline, 1.0,
 			GST_FORMAT_TIME,
-			seek_flags,
+            _seek_flags,
 			GST_SEEK_TYPE_SET, value,
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
@@ -122,7 +115,7 @@ guint64 Backend::backend_query_position(void) {
 	gint64 cur;
 	gboolean result;
 
-	result = gst_element_query_position(pipeline, &format, &cur);
+    result = gst_element_query_position(_pipeline, &format, &cur);
 	if(!result || format != GST_FORMAT_TIME)
 		return GST_CLOCK_TIME_NONE;
 
@@ -134,7 +127,7 @@ guint64 Backend::backend_query_duration(void) {
 	gint64 cur;
 	gboolean result;
 
-	result = gst_element_query_duration(pipeline, &format, &cur);
+    result = gst_element_query_duration(_pipeline, &format, &cur);
 	if(!result || format != GST_FORMAT_TIME)
 		return GST_CLOCK_TIME_NONE;
 
@@ -142,5 +135,6 @@ guint64 Backend::backend_query_duration(void) {
 }
 
 Backend::Backend(int *argc, char **argv[]) {
+    _seek_flags =(GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT);
     gst_init(argc, argv);
 }

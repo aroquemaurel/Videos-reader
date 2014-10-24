@@ -1,6 +1,8 @@
 #ifndef GST_BACKEND_H
 #define GST_BACKEND_H
 
+#include <gst/gst.h>
+#include <gst/interfaces/xoverlay.h>
 
 class Backend {
 public:
@@ -18,6 +20,11 @@ public:
     guint64 backend_query_duration (void);
 
 private:
+    GstElement *_pipeline;
+    GstElement *_videosink;
+    gpointer _window;
+    GstSeekFlags _seek_flags;
+
 
 };
 
