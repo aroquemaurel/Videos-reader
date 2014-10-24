@@ -30,15 +30,11 @@ static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 	return TRUE;
 }
 
-void backend_init(int *argc, char **argv[]) {
-	gst_init(argc, argv);
-}
-
-void backend_set_window(gpointer window_) {
+void Backend::backend_set_window(gpointer window_) {
 	window = window_;
 }
 
-void backend_play(const gchar *filename) {
+void Backend::backend_play(const gchar *filename) {
 	backend_stop();
 
 	pipeline = gst_element_factory_make("playbin", "gst-player");
@@ -56,16 +52,11 @@ void backend_play(const gchar *filename) {
 	{
 		gchar *uri;
 
-		if(gst_uri_is_valid(filename))
-		{
+        if(gst_uri_is_valid(filename)) {
 			uri = g_strdup(filename);
-		}
-		else if(g_path_is_absolute(filename))
-		{
+        } else if(g_path_is_absolute(filename))	{
 			uri = g_filename_to_uri(filename, NULL, NULL);
-		}
-		else
-		{
+        } else {
 			gchar *tmp;
 			tmp = g_build_filename(g_get_current_dir(), filename, NULL);
 			uri = g_filename_to_uri(tmp, NULL, NULL);
@@ -79,32 +70,30 @@ void backend_play(const gchar *filename) {
 
 	g_object_set(G_OBJECT(videosink), "force-aspect-ratio", TRUE, NULL);
 
-	if(GST_IS_X_OVERLAY(videosink))
-	{
+	if(GST_IS_X_OVERLAY(videosink))	{
 		gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(videosink), GPOINTER_TO_INT(window));
 	}
 
 	gst_element_set_state(pipeline, GST_STATE_PLAYING);
 }
 
-void backend_stop(void) {
-	if(pipeline)
-	{
+void Backend::backend_stop(void) {
+    if(pipeline) {
 		gst_element_set_state(pipeline, GST_STATE_NULL);
 		gst_object_unref(GST_OBJECT(pipeline));
 		pipeline = NULL;
 	}
 }
 
-void backend_pause(void) {
+void Backend::backend_pause(void) {
 	gst_element_set_state(pipeline, GST_STATE_PAUSED);
 }
 
-void backend_resume(void) {
+void Backend::backend_resume(void) {
 	gst_element_set_state(pipeline, GST_STATE_PLAYING);
 }
 
-void backend_reset(void) {
+void Backend::backend_reset(void) {
 	gst_element_seek(pipeline, 1.0,
 			GST_FORMAT_TIME,
 			seek_flags,
@@ -112,7 +101,7 @@ void backend_reset(void) {
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
-void backend_seek(gint value) {
+void Backend::backend_seek(gint value) {
 	gst_element_seek(pipeline, 1.0,
 			GST_FORMAT_TIME,
 			seek_flags,
@@ -120,7 +109,7 @@ void backend_seek(gint value) {
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
-void backend_seek_absolute(guint64 value) {
+void Backend::backend_seek_absolute(guint64 value) {
 	gst_element_seek(pipeline, 1.0,
 			GST_FORMAT_TIME,
 			seek_flags,
@@ -128,7 +117,7 @@ void backend_seek_absolute(guint64 value) {
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
-guint64 backend_query_position(void) {
+guint64 Backend::backend_query_position(void) {
 	GstFormat format = GST_FORMAT_TIME;
 	gint64 cur;
 	gboolean result;
@@ -140,7 +129,7 @@ guint64 backend_query_position(void) {
 	return cur;
 }
 
-guint64 backend_query_duration(void) {
+guint64 Backend::backend_query_duration(void) {
 	GstFormat format = GST_FORMAT_TIME;
 	gint64 cur;
 	gboolean result;
@@ -152,5 +141,6 @@ guint64 backend_query_duration(void) {
 	return cur;
 }
 
-void backend_deinit(void) {
+Backend::Backend(int *argc, char **argv[]) {
+    gst_init(argc, argv);
 }

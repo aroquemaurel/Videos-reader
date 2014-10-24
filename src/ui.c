@@ -17,19 +17,26 @@ static GtkWidget *controls;
 
 #define DURATION_IS_VALID(x) (x != 0 && x != (guint64) -1)
 Ui* Ui::_ui = 0;
+Backend* Ui::_back = 0;
 
 Ui::Ui() {
-	Ui::_ui = this;
+    Ui::_ui = this;
+}
+
+Ui::Ui(std::string filepath)
+{
+    Ui::_ui = this;
+    _fileName = filepath;
 }
 
 void Ui::toggle_paused (void) {
 	static gboolean paused = FALSE;
 	if (paused) {
-		backend_resume ();
+        _back->backend_resume ();
 		gtk_button_set_label (GTK_BUTTON (pause_button), "Pause");
 		paused = FALSE;
 	} else {
-		backend_pause ();
+        _back->backend_pause ();
 		gtk_button_set_label (GTK_BUTTON (pause_button), "Resume");
 		paused = TRUE;
 	}
@@ -50,11 +57,11 @@ void Ui::pause_cb (GtkWidget *widget, gpointer data) {
 }
 
 void Ui::reset_cb (GtkWidget *widget, gpointer data) {
-	backend_reset ();
+    _back->backend_reset ();
 }
 
 gboolean Ui::delete_event (GtkWidget *widget, GdkEvent *event, gpointer data) {
-	backend_stop ();
+    _back->backend_stop ();
 	return FALSE;
 }
 
@@ -76,13 +83,13 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 			break;
 		case GDK_R:
 		case GDK_r:
-			backend_reset ();
+            _back->backend_reset ();
 			break;
 		case GDK_Right:
-			backend_seek (10);
+            _back->backend_seek (10);
 			break;
 		case GDK_Left:
-			backend_seek (-10);
+            _back->backend_seek (-10);
 			break;
 		case GDK_Escape:
 		case GDK_Q:
@@ -96,33 +103,33 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 	return TRUE;
 }
 
-static void seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
+void Ui::seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
 {
 	guint64 to_seek;
 
 	if (!DURATION_IS_VALID (duration))
-		duration = backend_query_duration ();
+        duration = _back->backend_query_duration ();
 
 	if (!DURATION_IS_VALID (duration))
 		return;
 
 	to_seek = (value / 100) * duration;
 
-	backend_seek_absolute (to_seek);
+    _back->backend_seek_absolute (to_seek);
 }
 
 void Ui::realize_cb (GtkWidget * widget, gpointer data) {
 	GdkWindow *window = gtk_widget_get_window (video_output);
 
 	gdk_window_ensure_native (window);
-	backend_set_window (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
+    _back->backend_set_window (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
 	_ui->toggle_fullscreen ();
 }
 
-void Ui::start (void) {
+void Ui::start (Backend* back) {
 	GtkWidget *button;
 	GtkWidget *vbox;
-
+    _back = back;
 	window = GTK_WINDOW (gtk_window_new (GTK_WINDOW_TOPLEVEL));
 
 	g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (delete_event), NULL);
@@ -184,12 +191,12 @@ void Ui::start (void) {
 	gtk_widget_show_all (GTK_WIDGET (window));
 }
 
-static gboolean timeout (gpointer data) {
+gboolean Ui::timeout (gpointer data) {
 	guint64 pos;
 
-	pos = backend_query_position ();
+    pos = _back->backend_query_position ();
 	if (!DURATION_IS_VALID (duration))
-		duration = backend_query_duration ();
+        duration = _back->backend_query_duration ();
 
 	if (!DURATION_IS_VALID (duration))
 		return TRUE;
@@ -218,7 +225,7 @@ std::string Ui::getFileName() {
 
 gboolean Ui::init (gpointer data) {
 	if (!_ui->getFileName().empty())
-		backend_play (_ui->getFileName().c_str());
+        _back->backend_play (_ui->getFileName().c_str());
 
 	g_timeout_add (1000, timeout, NULL);
 
@@ -226,22 +233,15 @@ gboolean Ui::init (gpointer data) {
 }
 
 int main (int argc, char *argv[]) {
-	Ui ui = Ui();
+    Ui ui = Ui((argc > 1) ? argv[1] : "");
+    Backend* back = new Backend(&argc, &argv);
 	gtk_init(&argc, &argv);
-	backend_init(&argc, &argv);
-
-	ui.start();
-
-	if (argc > 1) {
-		ui.setFileName(g_strdup (argv[1]));
-	}
+    ui.start(back);
 
 	g_idle_add(Ui::init, NULL);
 
 	gtk_main();
-
-	backend_deinit();
-
+    delete back;
 	return 0;
 }
 
