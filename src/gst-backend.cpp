@@ -26,23 +26,35 @@ static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 void Backend::backend_set_window(gpointer window_) {
     _window = window_;
 }
+static void on_pad_added (GstElement *element, GstPad     *pad, gpointer    data) {
+    GstPad *sinkpad;
+    GstElement *decoder = (GstElement *) data;
 
+    /* We can now link this pad with the vorbis-decoder sink pad */
+    g_print ("Dynamic pad created, linking demuxer/decoder\n");
+
+    sinkpad = gst_element_get_static_pad (decoder, "sink");
+
+    gst_pad_link (pad, sinkpad);
+    gst_object_unref (sinkpad);
+}
 void Backend::backend_play(const gchar *filename) {
 	backend_stop();
 
-    _pipeline = gst_element_factory_make("playbin", "gst-player");
-    _videosink = gst_element_factory_make("xvimagesink", "_videosink");
+//    _pipeline = gst_element_factory_make("playbin", "gst-player");
+//    _videosink = gst_element_factory_make("xvimagesink", "_videosink");
 
-    g_object_set(G_OBJECT(_pipeline), "video-sink", _videosink, NULL);
+    GstElement *source, *demuxer,  *conv, *sink, *queueAudio;
+    GstElement *queueVideo, *videoBalance,*volume;
 
-	{
-		GstBus *bus;
-        bus = gst_pipeline_get_bus(GST_PIPELINE(_pipeline));
-		gst_bus_add_watch(bus, bus_cb, NULL);
-		gst_object_unref(bus);
-	}
+//    pipeline = gst_pipeline_new ("audiovideo-player");
+    source   = gst_element_factory_make ("filesrc",       "file-source");
+    demuxer  = gst_element_factory_make ("decodebin",      "decodebin");
 
-	{
+//    g_object_set(G_OBJECT(_pipeline), "video-sink", _videosink, NULL);
+
+
+    /*{
 		gchar *uri;
 
         if(gst_uri_is_valid(filename)) {
@@ -59,13 +71,60 @@ void Backend::backend_play(const gchar *filename) {
 		g_debug("%s", uri);
         g_object_set(G_OBJECT(_pipeline), "uri", uri, NULL);
 		g_free(uri);
-	}
+    }*/
+    /* Creation des elements gstreamer */
+    _pipeline = gst_pipeline_new ("audiovideo-player");
+    source   = gst_element_factory_make ("filesrc",       "file-source");
+    demuxer  = gst_element_factory_make ("decodebin",      "decodebin");
+
+    // Audio
+    conv     = gst_element_factory_make ("audioconvert",  "converter");
+    sink     = gst_element_factory_make ("autoaudiosink", "audio-output");
+    queueAudio = gst_element_factory_make ("queue", "queue-audio");
+    volume = gst_element_factory_make ("volume", "volume");
+    // Video
+    _videosink = gst_element_factory_make("xvimagesink", "_videosink");
+    queueVideo = gst_element_factory_make ("queue", "queue-video");
+    videoBalance = gst_element_factory_make ("videobalance", "saturation");
+
+    if (!_pipeline || !source || !demuxer || !conv || !videoBalance ||
+            !sink ||!queueVideo || ! queueAudio || !_videosink ) {
+        g_printerr ("One element could not be created. Exiting.\n");
+        return;
+    }
+
+    /* Mise en place du pipeline */
+    /* on configurer le nom du fichier a l'element source */
+    g_object_set (G_OBJECT (source), "location", filename, NULL);
+    g_object_set (G_OBJECT (videoBalance), "saturation", 0.0, NULL);
+    g_object_set (G_OBJECT (volume), "volume", 0.5, NULL);
+    g_object_set(G_OBJECT(_pipeline), "video-sink", _videosink, NULL);
+
+
+    {
+        GstBus *bus;
+        bus = gst_pipeline_get_bus(GST_PIPELINE(_pipeline));
+        gst_bus_add_watch(bus, bus_cb, NULL);
+        gst_object_unref(bus);
+    }
+
+    /* on rajoute tous les elements dans le pipeline */
+    /* file-source | ogg-demuxer | vorbis-decoder | converter | alsa-output */
+    gst_bin_add_many (GST_BIN (_pipeline),
+            source, volume, demuxer, queueAudio, videoBalance, conv, sink, queueVideo, _videosink, NULL);
+    /* On relie les elements entre eux */
+    /* file-source -> ogg-demuxer ~> vorbis-decoder -> converter -> alsa-output */
+    gst_element_link (source, demuxer);
+    gst_element_link_many(queueAudio, volume, conv, sink, NULL);
+    gst_element_link_many (queueVideo, videoBalance, _videosink, NULL);
+    g_signal_connect (demuxer, "pad-added", G_CALLBACK (on_pad_added), queueAudio);
+    g_signal_connect (demuxer, "pad-added", G_CALLBACK (on_pad_added), queueVideo);
 
     g_object_set(G_OBJECT(_videosink), "force-aspect-ratio", TRUE, NULL);
 
     if(GST_IS_X_OVERLAY(_videosink))	{
         gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(_videosink), GPOINTER_TO_INT(_window));
-	}
+    }
 
     gst_element_set_state(_pipeline, GST_STATE_PLAYING);
 }
