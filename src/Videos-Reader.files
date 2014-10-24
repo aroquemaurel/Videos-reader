@@ -1,0 +1,7 @@
+gst-backend.c
+gst-backend.h
+lecteuraudio.c
+lecteuraudiovideo.c
+Makefile
+ui.c
+ui.h
