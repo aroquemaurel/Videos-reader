@@ -12,6 +12,7 @@ static GtkWidget *controls;
 #define DURATION_IS_VALID(x) (x != 0 && x != (guint64) -1)
 Ui* Ui::_ui = 0;
 Backend* Ui::_back = 0;
+GtkWidget* Ui::menu_bar = 0;
 
 Ui::Ui() {
     Ui::_ui = this;
@@ -40,9 +41,11 @@ void Ui::toggle_fullscreen (void) {
 	if (gdk_window_get_state (GTK_WIDGET (window)->window) == GDK_WINDOW_STATE_FULLSCREEN) {
 		gtk_window_unfullscreen (window);
 		gtk_widget_show (controls);
+        gtk_widget_show(menu_bar);
 	} else {
 		gtk_window_fullscreen (window);
 		gtk_widget_hide (controls);
+        gtk_widget_hide(menu_bar);
 	}
 }
 
@@ -60,7 +63,7 @@ gboolean Ui::delete_event (GtkWidget *widget, GdkEvent *event, gpointer data) {
 }
 
 void Ui::destroy (GtkWidget *widget, gpointer data) {
-	gtk_main_quit ();
+    gtk_main_quit ();
 }
 
 gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
@@ -117,7 +120,57 @@ void Ui::realize_cb (GtkWidget * widget, gpointer data) {
 
 	gdk_window_ensure_native (window);
     _back->backend_set_window (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
-	_ui->toggle_fullscreen ();
+}
+
+void Ui::createMenus(GtkWidget *vbox)
+{
+    GtkWidget *menuFile;
+    GtkWidget *menuVideo;
+    GtkWidget *fileLabel;
+    GtkWidget *menuFile_items;
+    GtkWidget *menuVideo_items;
+    GtkWidget *videoLabel;
+
+    //***//
+    {
+
+        /* Init the menu-widget, and remember -- never
+         * gtk_show_widget() the menu widget!! */
+        menuFile = gtk_menu_new();
+        menuVideo = gtk_menu_new();
+
+        fileLabel = gtk_menu_item_new_with_label("Fichier");
+        gtk_widget_show(fileLabel);
+        menuFile_items = gtk_menu_item_new_with_label("Ouvrir un fichier");
+        gtk_menu_append(GTK_MENU (menuFile), menuFile_items);
+        menuFile_items = gtk_menu_item_new_with_label("Quitter");
+        gtk_widget_show(menuFile_items);
+        gtk_menu_append(GTK_MENU (menuFile), menuFile_items);
+
+
+        videoLabel = gtk_menu_item_new_with_label("Vidéo");
+        gtk_widget_show(videoLabel);
+        menuVideo_items = gtk_menu_item_new_with_label("Ajouter des sous-titre");
+        gtk_widget_show(menuVideo_items);
+        gtk_menu_append(GTK_MENU (menuVideo), menuVideo_items);
+
+
+        /* Now we specify that we want our newly created "menu" to be the menu for the "root menu" */
+        gtk_menu_item_set_submenu(GTK_MENU_ITEM (fileLabel), menuFile);
+        gtk_menu_item_set_submenu(GTK_MENU_ITEM (videoLabel), menuVideo);
+
+
+        /* Create a menu-bar to hold the menus and add it to our main window*/
+        menu_bar = gtk_menu_bar_new();
+        gtk_container_add(GTK_CONTAINER(vbox), menu_bar);
+        gtk_widget_show(menu_bar);
+
+        /* And finally we append the menu-item to the menu-bar -- this is the "root"
+         * menu-item I have been raving about =) */
+        gtk_menu_bar_append(GTK_MENU_BAR (menu_bar), fileLabel);
+        gtk_menu_bar_append(GTK_MENU_BAR (menu_bar), videoLabel);
+
+    }
 }
 
 void Ui::start (Backend* back) {
@@ -130,7 +183,7 @@ void Ui::start (Backend* back) {
 	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (Ui::destroy), NULL);
 	g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (key_press), NULL);
 
-	gtk_container_set_border_width (GTK_CONTAINER (window), 0);
+    gtk_container_set_border_width (GTK_CONTAINER (window), 0);
 
 	vbox = gtk_vbox_new (FALSE, 0);
 
@@ -139,6 +192,8 @@ void Ui::start (Backend* back) {
 	controls = gtk_hbox_new (FALSE, 0);
 
 	gtk_box_pack_end (GTK_BOX (vbox), controls, FALSE, FALSE, 2);
+
+    createMenus(vbox);
 
 	{
 		GdkColor color;
@@ -181,6 +236,7 @@ void Ui::start (Backend* back) {
 
 		g_signal_connect (G_OBJECT (scale), "change-value", G_CALLBACK (seek_cb), NULL);
 	}
+
 
 	gtk_widget_show_all (GTK_WIDGET (window));
 }

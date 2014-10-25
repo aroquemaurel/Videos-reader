@@ -10,6 +10,7 @@
 class Backend {
 public:
     Backend(int *argc, char **argv[]);
+    ~Backend();
     void backend_play (const gchar *filename);
     void backend_stop (void);
     void backend_pause (void);

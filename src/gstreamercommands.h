@@ -9,7 +9,7 @@ class GStreamerCommands
 {
 public:
     GStreamerCommands();
-
+    ~GStreamerCommands();
     GstElement *getElement(std::string s);
     void addElement(std::string name, std::string value);
     void checkAllElements();

@@ -9,8 +9,6 @@ class Player
 public:
     Player(int argc, char** argv);
     void open();
-
-    ~Player();
 private:
     Ui* _ui;
     Backend* _backend;

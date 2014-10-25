@@ -96,7 +96,6 @@ void Backend::backend_play(const gchar *filename) {
 void Backend::backend_stop(void) {
     if(_commands != 0 && _commands->getPipeline() != 0) {
         gst_element_set_state(_commands->getPipeline(), GST_STATE_NULL);
-        gst_object_unref(GST_OBJECT(_commands->getPipeline()));
         delete _commands;
     }
 }
@@ -162,3 +161,6 @@ Backend::Backend(int *argc, char **argv[]) {
     _commands = NULL;
     gst_init(argc, argv);
 }
+
+
+

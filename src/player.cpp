@@ -7,10 +7,6 @@ Player::Player(int argc, char** argv)
     gtk_init(&argc, &argv);
 }
 
-Player::~Player() {
-    delete _backend;
-}
-
 void Player::open() {
     _ui->start(_backend);
     g_idle_add(Ui::init, NULL);

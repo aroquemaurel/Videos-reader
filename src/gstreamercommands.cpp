@@ -4,6 +4,10 @@ GStreamerCommands::GStreamerCommands() {
     _pipeline = gst_pipeline_new ("audiovideo-player");
 }
 
+GStreamerCommands::~GStreamerCommands() {
+//    gst_object_unref(GST_OBJECT(_pipeline));
+}
+
 void GStreamerCommands::addElement(std::string name, std::string value) {
     _elements.insert(std::pair<std::string, GstElement*>(
                              name,
@@ -26,13 +30,11 @@ void GStreamerCommands::addAllElements() {
     }
 
 }
-GstElement *GStreamerCommands::getPipeline() const
-{
+GstElement *GStreamerCommands::getPipeline() const {
     return _pipeline;
 }
 
-void GStreamerCommands::setPipeline(GstElement *pipeline)
-{
+void GStreamerCommands::setPipeline(GstElement *pipeline) {
     _pipeline = pipeline;
 }
 

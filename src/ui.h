@@ -25,6 +25,8 @@ class Ui {
 
         static void setUi(Ui* ui);
 
+        void createMenus(GtkWidget *vbox, GtkWidget *menuVideo, GtkWidget *menuVideo_items, GtkWidget *fileLabel, GtkWidget *videoLabel, GtkWidget *menu_bar, GtkWidget *menuFile_items, GtkWidget *menuFile);
+        void createMenus(GtkWidget *vbox);
 private:
 		static gboolean delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
 		static void destroy (GtkWidget *widget, gpointer data);
@@ -38,6 +40,8 @@ private:
 
         static Ui* _ui;
         static Backend* _back;
+
+        static GtkWidget *menu_bar;
 
 		std::string _fileName;
 };
