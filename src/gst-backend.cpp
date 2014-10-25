@@ -1,4 +1,3 @@
-
 #include "gst-backend.h"
 
 static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
@@ -38,115 +37,80 @@ static void on_pad_added (GstElement *element, GstPad     *pad, gpointer    data
     gst_pad_link (pad, sinkpad);
     gst_object_unref (sinkpad);
 }
+
+void Backend::createBusForMessages() {
+    GstBus *bus;
+    bus = gst_pipeline_get_bus(GST_PIPELINE(_commands->getPipeline()));
+    gst_bus_add_watch(bus, bus_cb, NULL);
+    gst_object_unref(bus);
+}
+
+void Backend::incrustVideo() {
+    if(GST_IS_X_OVERLAY(_commands->getElement("videosink")))	{
+        gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(_commands->getElement("videosink")), GPOINTER_TO_INT(_window));
+    }
+}
+
+
 void Backend::backend_play(const gchar *filename) {
 	backend_stop();
+    _commands = new GStreamerCommands();
 
-//    _pipeline = gst_element_factory_make("playbin", "gst-player");
-//    _videosink = gst_element_factory_make("xvimagesink", "_videosink");
+    _commands->addElement("source", "filesrc");
 
-    GstElement *source, *demuxer,  *conv, *sink, *queueAudio;
-    GstElement *queueVideo, *videoBalance,*volume;
+    _commands->addElement("videosink", "xvimagesink");
+    _commands->addElement("demuxer", "decodebin");
+    _commands->addElement("audioconverter", "audioconvert");
+    _commands->addElement("audio-output", "autoaudiosink");
+    _commands->addElement("queue-audio", "queue");
+    _commands->addElement("volume", "volume");
 
-//    pipeline = gst_pipeline_new ("audiovideo-player");
-    source   = gst_element_factory_make ("filesrc",       "file-source");
-    demuxer  = gst_element_factory_make ("decodebin",      "decodebin");
+    _commands->addElement("queue-video", "queue");
+    _commands->addElement("saturation", "videobalance");
 
-//    g_object_set(G_OBJECT(_pipeline), "video-sink", _videosink, NULL);
-
-
-    /*{
-		gchar *uri;
-
-        if(gst_uri_is_valid(filename)) {
-			uri = g_strdup(filename);
-        } else if(g_path_is_absolute(filename))	{
-			uri = g_filename_to_uri(filename, NULL, NULL);
-        } else {
-			gchar *tmp;
-			tmp = g_build_filename(g_get_current_dir(), filename, NULL);
-			uri = g_filename_to_uri(tmp, NULL, NULL);
-			g_free(tmp);
-		}
-
-		g_debug("%s", uri);
-        g_object_set(G_OBJECT(_pipeline), "uri", uri, NULL);
-		g_free(uri);
-    }*/
-    /* Creation des elements gstreamer */
-    _pipeline = gst_pipeline_new ("audiovideo-player");
-    source   = gst_element_factory_make ("filesrc",       "file-source");
-    demuxer  = gst_element_factory_make ("decodebin",      "decodebin");
-
-    // Audio
-    conv     = gst_element_factory_make ("audioconvert",  "converter");
-    sink     = gst_element_factory_make ("autoaudiosink", "audio-output");
-    queueAudio = gst_element_factory_make ("queue", "queue-audio");
-    volume = gst_element_factory_make ("volume", "volume");
-    // Video
-    _videosink = gst_element_factory_make("xvimagesink", "_videosink");
-    queueVideo = gst_element_factory_make ("queue", "queue-video");
-    videoBalance = gst_element_factory_make ("videobalance", "saturation");
-
-    if (!_pipeline || !source || !demuxer || !conv || !videoBalance ||
-            !sink ||!queueVideo || ! queueAudio || !_videosink ) {
-        g_printerr ("One element could not be created. Exiting.\n");
-        return;
-    }
+    _commands->checkAllElements();
 
     /* Mise en place du pipeline */
     /* on configurer le nom du fichier a l'element source */
-    g_object_set (G_OBJECT (source), "location", filename, NULL);
-    g_object_set (G_OBJECT (videoBalance), "saturation", 0.0, NULL);
-    g_object_set (G_OBJECT (volume), "volume", 0.5, NULL);
-    g_object_set(G_OBJECT(_pipeline), "video-sink", _videosink, NULL);
+    g_object_set (G_OBJECT (_commands->getElement("source")), "location", filename, NULL);
+    g_object_set (G_OBJECT (_commands->getElement("saturation")), "saturation", 0.0, NULL);
+    g_object_set (G_OBJECT (_commands->getElement("volume")), "volume", 0.5, NULL);
+    g_object_set(G_OBJECT(_commands->getPipeline()), "video-sink", _commands->getElement("videosink"), NULL);
+    g_object_set(G_OBJECT(_commands->getElement("videosink")), "force-aspect-ratio", TRUE, NULL);
 
+    createBusForMessages();
 
-    {
-        GstBus *bus;
-        bus = gst_pipeline_get_bus(GST_PIPELINE(_pipeline));
-        gst_bus_add_watch(bus, bus_cb, NULL);
-        gst_object_unref(bus);
-    }
+    _commands->addAllElements();
 
-    /* on rajoute tous les elements dans le pipeline */
-    /* file-source | ogg-demuxer | vorbis-decoder | converter | alsa-output */
-    gst_bin_add_many (GST_BIN (_pipeline),
-            source, volume, demuxer, queueAudio, videoBalance, conv, sink, queueVideo, _videosink, NULL);
-    /* On relie les elements entre eux */
-    /* file-source -> ogg-demuxer ~> vorbis-decoder -> converter -> alsa-output */
-    gst_element_link (source, demuxer);
-    gst_element_link_many(queueAudio, volume, conv, sink, NULL);
-    gst_element_link_many (queueVideo, videoBalance, _videosink, NULL);
-    g_signal_connect (demuxer, "pad-added", G_CALLBACK (on_pad_added), queueAudio);
-    g_signal_connect (demuxer, "pad-added", G_CALLBACK (on_pad_added), queueVideo);
+    gst_element_link (_commands->getElement("source"), _commands->getElement("demuxer"));
+    gst_element_link_many(_commands->getElement("queue-audio"), _commands->getElement("volume"), _commands->getElement("audioconverter"), _commands->getElement("audio-output"), NULL);
+    gst_element_link_many (_commands->getElement("queue-video"), _commands->getElement("saturation"), _commands->getElement("videosink"), NULL);
+    g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("queue-audio"));
+    g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("queue-video"));
 
-    g_object_set(G_OBJECT(_videosink), "force-aspect-ratio", TRUE, NULL);
+    incrustVideo();
 
-    if(GST_IS_X_OVERLAY(_videosink))	{
-        gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(_videosink), GPOINTER_TO_INT(_window));
-    }
-
-    gst_element_set_state(_pipeline, GST_STATE_PLAYING);
+    gst_element_set_state(_commands->getPipeline(), GST_STATE_PLAYING);
 }
 
 void Backend::backend_stop(void) {
-    if(_pipeline) {
-        gst_element_set_state(_pipeline, GST_STATE_NULL);
-        gst_object_unref(GST_OBJECT(_pipeline));
-        _pipeline = NULL;
-	}
+    if(_commands != 0 && _commands->getPipeline() != 0) {
+        gst_element_set_state(_commands->getPipeline(), GST_STATE_NULL);
+        gst_object_unref(GST_OBJECT(_commands->getPipeline()));
+        delete _commands;
+    }
 }
 
 void Backend::backend_pause(void) {
-    gst_element_set_state(_pipeline, GST_STATE_PAUSED);
+    gst_element_set_state(_commands->getPipeline(), GST_STATE_PAUSED);
 }
 
 void Backend::backend_resume(void) {
-    gst_element_set_state(_pipeline, GST_STATE_PLAYING);
+    gst_element_set_state(_commands->getPipeline(), GST_STATE_PLAYING);
 }
 
 void Backend::backend_reset(void) {
-    gst_element_seek(_pipeline, 1.0,
+    gst_element_seek(_commands->getPipeline(), 1.0,
 			GST_FORMAT_TIME,
             _seek_flags,
 			GST_SEEK_TYPE_SET, 0,
@@ -154,7 +118,7 @@ void Backend::backend_reset(void) {
 }
 
 void Backend::backend_seek(gint value) {
-    gst_element_seek(_pipeline, 1.0,
+    gst_element_seek(_commands->getPipeline(), 1.0,
 			GST_FORMAT_TIME,
             _seek_flags,
 			GST_SEEK_TYPE_CUR, value * GST_SECOND,
@@ -162,7 +126,7 @@ void Backend::backend_seek(gint value) {
 }
 
 void Backend::backend_seek_absolute(guint64 value) {
-    gst_element_seek(_pipeline, 1.0,
+    gst_element_seek(_commands->getPipeline(), 1.0,
 			GST_FORMAT_TIME,
             _seek_flags,
 			GST_SEEK_TYPE_SET, value,
@@ -174,7 +138,7 @@ guint64 Backend::backend_query_position(void) {
 	gint64 cur;
 	gboolean result;
 
-    result = gst_element_query_position(_pipeline, &format, &cur);
+    result = gst_element_query_position(_commands->getPipeline(), &format, &cur);
 	if(!result || format != GST_FORMAT_TIME)
 		return GST_CLOCK_TIME_NONE;
 
@@ -186,7 +150,7 @@ guint64 Backend::backend_query_duration(void) {
 	gint64 cur;
 	gboolean result;
 
-    result = gst_element_query_duration(_pipeline, &format, &cur);
+    result = gst_element_query_duration(_commands->getPipeline(), &format, &cur);
 	if(!result || format != GST_FORMAT_TIME)
 		return GST_CLOCK_TIME_NONE;
 
@@ -195,5 +159,6 @@ guint64 Backend::backend_query_duration(void) {
 
 Backend::Backend(int *argc, char **argv[]) {
     _seek_flags =(GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT);
+    _commands = NULL;
     gst_init(argc, argv);
 }

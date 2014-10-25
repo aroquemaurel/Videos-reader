@@ -1,9 +1,11 @@
 #ifndef __UI
 #define __UI
-#include <iostream>
+
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
+
+#include <iostream>
 
 #include "gst-backend.h"
 class Ui {
@@ -38,9 +40,6 @@ private:
         static Backend* _back;
 
 		std::string _fileName;
-
-
-
 };
 
 #endif

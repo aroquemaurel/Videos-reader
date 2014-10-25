@@ -8,3 +8,5 @@ ui.h
 player.h
 player.cpp
 main.cpp
+gstreamercommands.h
+gstreamercommands.cpp

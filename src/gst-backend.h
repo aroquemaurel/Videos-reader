@@ -3,6 +3,9 @@
 
 #include <gst/gst.h>
 #include <gst/interfaces/xoverlay.h>
+#include <iostream>
+
+#include "gstreamercommands.h"
 
 class Backend {
 public:
@@ -20,12 +23,12 @@ public:
     guint64 backend_query_duration (void);
 
 private:
-    GstElement *_pipeline;
-    GstElement *_videosink;
     gpointer _window;
     GstSeekFlags _seek_flags;
+    GStreamerCommands* _commands;
 
-
+    void createBusForMessages();
+    void incrustVideo();
 };
 
 #endif /* GST_BACKEND_H */
