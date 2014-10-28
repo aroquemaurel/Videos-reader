@@ -1,11 +1,13 @@
 \BOOKMARK [1][-]{section.1}{Partie I : en ligne de commande}{}% 1
-\BOOKMARK [2][-]{subsection.1.1}{}{section.1}% 2
-\BOOKMARK [2][-]{subsection.1.2}{}{section.1}% 3
-\BOOKMARK [2][-]{subsection.1.3}{}{section.1}% 4
-\BOOKMARK [2][-]{subsection.1.4}{}{section.1}% 5
-\BOOKMARK [1][-]{section.2}{Partie II : en programmation C++}{}% 6
-\BOOKMARK [2][-]{subsection.2.1}{}{section.2}% 7
-\BOOKMARK [2][-]{subsection.2.2}{}{section.2}% 8
-\BOOKMARK [2][-]{subsection.2.3}{}{section.2}% 9
-\BOOKMARK [2][-]{subsection.2.4}{}{section.2}% 10
-\BOOKMARK [2][-]{subsection.2.5}{}{section.2}% 11
+\BOOKMARK [2][-]{subsection.1.1}{Les formats OGV, Vorbis et Theora}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Lire une vid\351o}{section.1}% 3
+\BOOKMARK [3][-]{subsubsection.1.2.1}{Lire une vid\351o avec le son}{subsection.1.2}% 4
+\BOOKMARK [3][-]{subsubsection.1.2.2}{Lire une vid\351o en rempla\347ant l'audio}{subsection.1.2}% 5
+\BOOKMARK [2][-]{subsection.1.3}{Lire une vid\351o avec des sous-titres}{section.1}% 6
+\BOOKMARK [2][-]{subsection.1.4}{Enregistrer une vid\351o avec les sous-titres incrust\351s}{section.1}% 7
+\BOOKMARK [1][-]{section.2}{Partie II : en programmation C++}{}% 8
+\BOOKMARK [2][-]{subsection.2.1}{}{section.2}% 9
+\BOOKMARK [2][-]{subsection.2.2}{}{section.2}% 10
+\BOOKMARK [2][-]{subsection.2.3}{}{section.2}% 11
+\BOOKMARK [2][-]{subsection.2.4}{}{section.2}% 12
+\BOOKMARK [2][-]{subsection.2.5}{}{section.2}% 13

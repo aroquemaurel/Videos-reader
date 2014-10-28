@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 3.1.1, 2014-10-25T13:41:52. -->
+<!-- Written by QtCreator 3.1.1, 2014-10-28T00:49:42. -->
 <qtcreator>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -157,7 +157,7 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments">/home/aroquemaurel/projets/cpp/videos-reader/video.ogv</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments">/home/aroquemaurel/projets/cpp/videos-reader/video.ogv /home/aroquemaurel/projets/cpp/videos-reader/video.srt</value>
     <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">/home/aroquemaurel/projets/cpp/videos-reader/src/player</value>
     <value type="bool" key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal">false</value>
     <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}</value>

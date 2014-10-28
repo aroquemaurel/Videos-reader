@@ -52,41 +52,52 @@ void Backend::incrustVideo() {
 }
 
 
-void Backend::backend_play(const gchar *filename) {
+void Backend::backend_play(const std::string filename, const std::string srtfilename) {
 	backend_stop();
     _commands = new GStreamerCommands();
 
+    if(srtfilename != "") { // We have a subtitle
+        _commands->addElement ("subOverlay",    "subtitleoverlay");
+        _commands->addElement ("subSource",          "filesrc");
+        _commands->addElement ("subParse",          "subparse");
+
+        g_object_set (G_OBJECT (_commands->getElement("subSource")), "location", srtfilename.c_str(), NULL);
+    }
+
     _commands->addElement("source", "filesrc");
-
+    _commands->addElement("demuxer", "oggdemux");
+    _commands->addElement("audioQueue", "queue");
+    _commands->addElement("videoQueue", "queue");
+    _commands->addElement("audioDecoder", "vorbisdec");
+    _commands->addElement("videoDecoder", "theoradec");
+    _commands->addElement("audioConv", "audioconvert");
+    _commands->addElement("videoConv", "ffmpegcolorspace");
     _commands->addElement("videosink", "xvimagesink");
-    _commands->addElement("demuxer", "decodebin");
-    _commands->addElement("audioconverter", "audioconvert");
-    _commands->addElement("audio-output", "autoaudiosink");
-    _commands->addElement("queue-audio", "queue");
-    _commands->addElement("volume", "volume");
-
-    _commands->addElement("queue-video", "queue");
-    _commands->addElement("saturation", "videobalance");
+    _commands->addElement("audiosink", "autoaudiosink");
 
     _commands->checkAllElements();
-
-    /* Mise en place du pipeline */
-    /* on configurer le nom du fichier a l'element source */
-    g_object_set (G_OBJECT (_commands->getElement("source")), "location", filename, NULL);
-    g_object_set (G_OBJECT (_commands->getElement("saturation")), "saturation", 0.0, NULL);
-    g_object_set (G_OBJECT (_commands->getElement("volume")), "volume", 0.5, NULL);
-    g_object_set(G_OBJECT(_commands->getPipeline()), "video-sink", _commands->getElement("videosink"), NULL);
-    g_object_set(G_OBJECT(_commands->getElement("videosink")), "force-aspect-ratio", TRUE, NULL);
-
+    g_object_set (G_OBJECT (_commands->getElement("source")), "location", filename.c_str(), NULL);
+    _commands->addAllElements();
     createBusForMessages();
 
-    _commands->addAllElements();
-
     gst_element_link (_commands->getElement("source"), _commands->getElement("demuxer"));
-    gst_element_link_many(_commands->getElement("queue-audio"), _commands->getElement("volume"), _commands->getElement("audioconverter"), _commands->getElement("audio-output"), NULL);
-    gst_element_link_many (_commands->getElement("queue-video"), _commands->getElement("saturation"), _commands->getElement("videosink"), NULL);
-    g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("queue-audio"));
-    g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("queue-video"));
+
+    gst_element_link_many (_commands->getElement("videoQueue"), _commands->getElement("videoDecoder"),
+                           _commands->getElement("videoConv"), _commands->getElement("subOverlay"),
+                           _commands->getElement("videosink"), NULL);
+
+    gst_element_link_many (_commands->getElement("audioQueue"), _commands->getElement("audioDecoder"),
+                           _commands->getElement("audioConv"), _commands->getElement("audiosink"), NULL);
+
+    g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("audioQueue"));
+    g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("videoQueue"));
+
+    /* Linking subtitles and video pads together */
+    gst_element_link (_commands->getElement("subSource"), _commands->getElement("subParse"));
+
+    if(!gst_element_link_pads(_commands->getElement("subParse"), NULL, _commands->getElement("subOverlay"), NULL)) {
+        g_printerr("Pads couldn't be linked\n");
+    }
 
     incrustVideo();
 

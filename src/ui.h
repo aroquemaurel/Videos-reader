@@ -11,7 +11,7 @@
 class Ui {
 	public:
 		Ui();
-        Ui(std::string filepath);
+        Ui(std::string filepath, std::string srtfilename="");
 
         void start (Backend *back);
 		void toggle_paused (void);
@@ -27,8 +27,11 @@ class Ui {
 
         void createMenus(GtkWidget *vbox, GtkWidget *menuVideo, GtkWidget *menuVideo_items, GtkWidget *fileLabel, GtkWidget *videoLabel, GtkWidget *menu_bar, GtkWidget *menuFile_items, GtkWidget *menuFile);
         void createMenus(GtkWidget *vbox);
+        std::string getSrtFilename() const;
+        void setSrtFilename(const std::string &getSrtFilename);
+
 private:
-		static gboolean delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
+        static gboolean delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
 		static void destroy (GtkWidget *widget, gpointer data);
 		static void realize_cb (GtkWidget * widget, gpointer data);
 		static void pause_cb (GtkWidget *widget, gpointer data);
@@ -44,7 +47,10 @@ private:
         static GtkWidget *menu_bar;
 
 		std::string _fileName;
+        std::string _srtFilename;
+
 };
+
 
 #endif
 

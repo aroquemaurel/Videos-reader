@@ -11,7 +11,7 @@ class Backend {
 public:
     Backend(int *argc, char **argv[]);
     ~Backend();
-    void backend_play (const gchar *filename);
+    void backend_play (const std::string filename, const std::string srtfilename="");
     void backend_stop (void);
     void backend_pause (void);
     void backend_reset (void);

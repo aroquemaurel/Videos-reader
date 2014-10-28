@@ -4,8 +4,7 @@
 \input{/home/aroquemaurel/cours/templates/templates/couleurs.tex}
 \usepackage{lmodern}
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[francais]{babel}
+\usepackage[T1]{fontenc} \usepackage[francais]{babel}
 \usepackage[top=1.7cm, bottom=1.7cm, left=2.5cm, right=2.5cm]{geometry}
 \usepackage{verbatim}
 \usepackage{tikz} %Vectoriel
@@ -36,10 +35,24 @@
 \begin{document}
 	\maketitle
 	\section{Partie I : en ligne de commande}
-	\subsection{}
-	\subsection{}
-	\subsection{}
-	\subsection{}
+	\subsection{Les formats OGV, Vorbis et Theora}
+	\begin{description}
+		\item[OGV]
+		\item[Vorbis] 
+		\item[Theora] 
+	\end{description}
+	\subsection{Lire une vidéo}
+	\subsubsection{Lire une vidéo avec le son}
+	\subsubsection{Lire une vidéo en remplaçant l'audio}
+	\subsection{Lire une vidéo avec des sous-titres}
+\begin{lstlisting}[language=Bash]	
+gst-launch filesrc location=video.ogv ! oggdemux name=demux \ 
+filesrc location=video.srt ! subparse ! overlay. \
+demux. ! queue ! vorbisdec ! audioconvert !  autoaudiosink \
+demux. ! queue ! theoradec ! ffmpegcolorspace ! \
+subtitleoverlay name=overlay ! autovideosink
+\end{lstlisting}
+	\subsection{Enregistrer une vidéo avec les sous-titres incrustés}
 	\section{Partie II : en programmation C++}
 	\subsection{}
 	\subsection{}

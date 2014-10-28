@@ -18,10 +18,11 @@ Ui::Ui() {
     Ui::_ui = this;
 }
 
-Ui::Ui(std::string filepath)
+Ui::Ui(std::string filepath, std::string srtfilename)
 {
     Ui::_ui = this;
     _fileName = filepath;
+    _srtFilename = srtfilename;
 }
 
 void Ui::toggle_paused (void) {
@@ -265,17 +266,27 @@ gboolean Ui::timeout (gpointer data) {
 
 	return TRUE;
 }
+std::string Ui::getSrtFilename() const
+{
+    return _srtFilename;
+}
+
+void Ui::setSrtFilename(const std::string &srtFilename)
+{
+    _srtFilename = srtFilename;
+}
+
 void Ui::setFileName(std::string s) {
-	_fileName = s;
+    _fileName = s;
 }
 
 std::string Ui::getFileName() {
-	return _fileName;
+    return _fileName;
 }
 
 gboolean Ui::init (gpointer data) {
     if (!_ui->getFileName().empty())
-        _back->backend_play (_ui->getFileName().c_str());
+        _back->backend_play (_ui->getFileName(), _ui->getSrtFilename());
 
 	g_timeout_add (1000, timeout, NULL);
 
