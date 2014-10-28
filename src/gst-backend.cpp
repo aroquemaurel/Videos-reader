@@ -61,7 +61,7 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
         _commands->addElement ("subSource",          "filesrc");
         _commands->addElement ("subParse",          "subparse");
 
-        g_object_set (G_OBJECT (_commands->getElement("subSource")), "location", srtfilename.c_str(), NULL);
+        _commands->setElement("subSource", "location", srtfilename);
     }
 
     _commands->addElement("source", "filesrc");
@@ -76,15 +76,21 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
     _commands->addElement("audiosink", "autoaudiosink");
 
     _commands->checkAllElements();
-    g_object_set (G_OBJECT (_commands->getElement("source")), "location", filename.c_str(), NULL);
+    _commands->setElement("source", "location", filename);
     _commands->addAllElements();
     createBusForMessages();
 
     gst_element_link (_commands->getElement("source"), _commands->getElement("demuxer"));
 
-    gst_element_link_many (_commands->getElement("videoQueue"), _commands->getElement("videoDecoder"),
-                           _commands->getElement("videoConv"), _commands->getElement("subOverlay"),
-                           _commands->getElement("videosink"), NULL);
+    if(srtfilename != "") {
+        gst_element_link_many (_commands->getElement("videoQueue"), _commands->getElement("videoDecoder"),
+                               _commands->getElement("videoConv"), _commands->getElement("subOverlay"),
+                               _commands->getElement("videosink"), NULL);
+    } else {
+        gst_element_link_many (_commands->getElement("videoQueue"), _commands->getElement("videoDecoder"),
+                               _commands->getElement("videoConv"),
+                               _commands->getElement("videosink"), NULL);
+    }
 
     gst_element_link_many (_commands->getElement("audioQueue"), _commands->getElement("audioDecoder"),
                            _commands->getElement("audioConv"), _commands->getElement("audiosink"), NULL);
@@ -92,11 +98,13 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
     g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("audioQueue"));
     g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("videoQueue"));
 
-    /* Linking subtitles and video pads together */
-    gst_element_link (_commands->getElement("subSource"), _commands->getElement("subParse"));
+    if(srtfilename != "") { // We have a subtitle
+        /* Linking subtitles and video pads together */
+        gst_element_link (_commands->getElement("subSource"), _commands->getElement("subParse"));
 
-    if(!gst_element_link_pads(_commands->getElement("subParse"), NULL, _commands->getElement("subOverlay"), NULL)) {
-        g_printerr("Pads couldn't be linked\n");
+        if(!gst_element_link_pads(_commands->getElement("subParse"), NULL, _commands->getElement("subOverlay"), NULL)) {
+            g_printerr("Pads couldn't be linked\n");
+        }
     }
 
     incrustVideo();

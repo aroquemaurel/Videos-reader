@@ -12,6 +12,7 @@ public:
     ~GStreamerCommands();
     GstElement *getElement(std::string s);
     void addElement(std::string name, std::string value);
+    void setElement(std::string nameElement, const std::string nameArg, const std::string valuePropertie);
     void checkAllElements();
     void addAllElements();
     GstElement *getPipeline() const;

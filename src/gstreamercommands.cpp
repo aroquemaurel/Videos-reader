@@ -11,8 +11,13 @@ GStreamerCommands::~GStreamerCommands() {
 void GStreamerCommands::addElement(std::string name, std::string value) {
     _elements.insert(std::pair<std::string, GstElement*>(
                              name,
-                             gst_element_factory_make (value.data(), name.data())));
+                         gst_element_factory_make (value.data(), name.data())));
 }
+
+void GStreamerCommands::setElement(std::string nameElement, const std::string nameArg, const std::string valuePropertie) {
+    g_object_set (G_OBJECT (getElement(nameElement)), nameArg.c_str(), valuePropertie.c_str(), NULL);
+}
+
 
 void GStreamerCommands::checkAllElements() {
     std::map<std::string, GstElement*>::iterator it;
