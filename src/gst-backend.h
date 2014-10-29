@@ -23,6 +23,9 @@ public:
     guint64 backend_query_position (void);
     guint64 backend_query_duration (void);
 
+    void showSubtitles();
+    void hideSubtitles();
+    bool subtitlesIsHiding();
 private:
     gpointer _window;
     GstSeekFlags _seek_flags;
@@ -30,6 +33,8 @@ private:
 
     void createBusForMessages();
     void incrustVideo();
+
+    bool _subtitlesIsHidding;
 };
 
 #endif /* GST_BACKEND_H */

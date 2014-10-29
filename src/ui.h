@@ -30,6 +30,7 @@ class Ui {
         std::string getSrtFilename() const;
         void setSrtFilename(const std::string &getSrtFilename);
 
+
 private:
         static gboolean delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
 		static void destroy (GtkWidget *widget, gpointer data);
@@ -37,7 +38,7 @@ private:
 		static void pause_cb (GtkWidget *widget, gpointer data);
 		static void reset_cb (GtkWidget *widget, gpointer data);
 		static gboolean key_press (GtkWidget *widget, GdkEventKey *event, gpointer data);
-
+        static void subtitles_cb(GtkWidget *widget, gpointer data);
         static void seek_cb(GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data);
         static gboolean timeout(gpointer data);
 

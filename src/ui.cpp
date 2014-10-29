@@ -8,7 +8,7 @@ static GtkWidget *scale;
 static guint64 duration;
 static GtkWindow *window;
 static GtkWidget *controls;
-
+static GtkWidget *subtitles_button;
 #define DURATION_IS_VALID(x) (x != 0 && x != (guint64) -1)
 Ui* Ui::_ui = 0;
 Backend* Ui::_back = 0;
@@ -26,15 +26,15 @@ Ui::Ui(std::string filepath, std::string srtfilename)
 }
 
 void Ui::toggle_paused (void) {
-	static gboolean paused = FALSE;
+    static bool paused = false;
 	if (paused) {
         _back->backend_resume ();
         gtk_button_set_label (GTK_BUTTON (pause_button), "Pause");
-		paused = FALSE;
+        paused = false;
 	} else {
         _back->backend_pause ();
         gtk_button_set_label (GTK_BUTTON (pause_button), "Resume");
-		paused = TRUE;
+        paused = true;
 	}
 }
 
@@ -121,6 +121,16 @@ void Ui::realize_cb (GtkWidget * widget, gpointer data) {
 
 	gdk_window_ensure_native (window);
     _back->backend_set_window (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
+}
+
+void Ui::subtitles_cb(GtkWidget * widget, gpointer data) {
+    if(_back->subtitlesIsHiding()) {
+        _back->showSubtitles();
+        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Hide subtitles");
+    } else {
+        _back->hideSubtitles();
+        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Show subtitles");
+    }
 }
 
 void Ui::createMenus(GtkWidget *vbox)
@@ -220,6 +230,16 @@ void Ui::start (Backend* back) {
 		pause_button = button;
 	}
 
+    {
+
+        button = gtk_button_new_with_label ("Hide subtitles");
+
+        g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (subtitles_cb), NULL);
+
+        gtk_box_pack_start (GTK_BOX (controls), button, FALSE, FALSE, 2);
+        subtitles_button = button;
+    }
+
 	{
 		button = gtk_button_new_with_label ("Reset");
 
@@ -288,6 +308,9 @@ gboolean Ui::init (gpointer data) {
     if (!_ui->getFileName().empty())
         _back->backend_play (_ui->getFileName(), _ui->getSrtFilename());
 
+    if(_back->subtitlesIsHiding()) {
+        gtk_widget_hide(subtitles_button);
+    }
 	g_timeout_add (1000, timeout, NULL);
 
 	return FALSE;

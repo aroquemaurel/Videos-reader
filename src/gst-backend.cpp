@@ -55,13 +55,14 @@ void Backend::incrustVideo() {
 void Backend::backend_play(const std::string filename, const std::string srtfilename) {
 	backend_stop();
     _commands = new GStreamerCommands();
-
-    if(srtfilename != "") { // We have a subtitle
+    _subtitlesIsHidding = srtfilename == "";
+    if(!_subtitlesIsHidding) { // We have a subtitle
         _commands->addElement ("subOverlay",    "subtitleoverlay");
         _commands->addElement ("subSource",          "filesrc");
         _commands->addElement ("subParse",          "subparse");
 
         _commands->setElement("subSource", "location", srtfilename);
+        g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", FALSE, NULL);
     }
 
     _commands->addElement("source", "filesrc");
@@ -82,7 +83,7 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
 
     gst_element_link (_commands->getElement("source"), _commands->getElement("demuxer"));
 
-    if(srtfilename != "") {
+    if(!_subtitlesIsHidding) {
         gst_element_link_many (_commands->getElement("videoQueue"), _commands->getElement("videoDecoder"),
                                _commands->getElement("videoConv"), _commands->getElement("subOverlay"),
                                _commands->getElement("videosink"), NULL);
@@ -133,6 +134,19 @@ void Backend::backend_reset(void) {
             _seek_flags,
 			GST_SEEK_TYPE_SET, 0,
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
+}
+void Backend::showSubtitles(void) {
+    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", FALSE, NULL);
+    _subtitlesIsHidding = false;
+}
+
+void Backend::hideSubtitles(void) {
+    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", TRUE, NULL);
+    _subtitlesIsHidding = true;
+}
+
+bool Backend::subtitlesIsHiding() {
+    return _subtitlesIsHidding;
 }
 
 void Backend::backend_seek(gint value) {
