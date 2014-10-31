@@ -4,11 +4,13 @@
 
 static GtkWidget *video_output;
 static GtkWidget *pause_button;
+static GtkWidget *play_button;
 static GtkWidget *scale;
 static guint64 duration;
 static GtkWindow *window;
 static GtkWidget *controls;
 static GtkWidget *subtitles_button;
+static GtkWidget *stop_button;
 #define DURATION_IS_VALID(x) (x != 0 && x != (guint64) -1)
 Ui* Ui::_ui = 0;
 Backend* Ui::_back = 0;
@@ -29,11 +31,13 @@ void Ui::toggle_paused (void) {
     static bool paused = false;
 	if (paused) {
         _back->backend_resume ();
-        gtk_button_set_label (GTK_BUTTON (pause_button), "Pause");
+        gtk_widget_hide(play_button);
+        gtk_widget_show(pause_button);
         paused = false;
 	} else {
         _back->backend_pause ();
-        gtk_button_set_label (GTK_BUTTON (pause_button), "Resume");
+        gtk_widget_hide(pause_button);
+        gtk_widget_show(play_button);
         paused = true;
 	}
 }
@@ -54,8 +58,13 @@ void Ui::pause_cb (GtkWidget *widget, gpointer data) {
 	_ui->toggle_paused();
 }
 
+void Ui::stop_cb(GtkWidget *widget, gpointer data) {
+    _back->stop();
+    gtk_range_set_value (GTK_RANGE (scale), 0);
+}
+
 void Ui::reset_cb (GtkWidget *widget, gpointer data) {
-    _back->backend_reset ();
+    _back->backend_reset (_ui->getFileName(), _ui->getSrtFilename());
 }
 
 gboolean Ui::delete_event (GtkWidget *widget, GdkEvent *event, gpointer data) {
@@ -81,7 +90,7 @@ gboolean Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 			break;
 		case GDK_R:
 		case GDK_r:
-            _back->backend_reset ();
+            _back->backend_reset (_ui->getFileName(), _ui->getSrtFilename());
 			break;
 		case GDK_Right:
             _back->backend_seek (10);
@@ -126,13 +135,12 @@ void Ui::realize_cb (GtkWidget * widget, gpointer data) {
 void Ui::subtitles_cb(GtkWidget * widget, gpointer data) {
     if(_back->subtitlesIsHiding()) {
         _back->showSubtitles();
-        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Hide subtitles");
+        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Hide srt");
     } else {
         _back->hideSubtitles();
-        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Show subtitles");
+        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Show srt");
     }
 }
-
 void Ui::createMenus(GtkWidget *vbox)
 {
     GtkWidget *menuFile;
@@ -204,8 +212,6 @@ void Ui::start (Backend* back) {
 
 	gtk_box_pack_end (GTK_BOX (vbox), controls, FALSE, FALSE, 2);
 
-    createMenus(vbox);
-
 	{
 		GdkColor color;
 
@@ -222,17 +228,31 @@ void Ui::start (Backend* back) {
 	}
 
 	{
-		button = gtk_button_new_with_label ("Pause");
+          pause_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PAUSE);
 
-		g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (pause_cb), NULL);
+        g_signal_connect (G_OBJECT (pause_button), "clicked", G_CALLBACK (pause_cb), NULL);
 
-		gtk_box_pack_start (GTK_BOX (controls), button, FALSE, FALSE, 2);
-		pause_button = button;
-	}
+        gtk_box_pack_start (GTK_BOX (controls), pause_button, FALSE, FALSE, 2);
+    }
+    {
+          stop_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_STOP);
+
+        g_signal_connect (G_OBJECT (stop_button), "clicked", G_CALLBACK (stop_cb), NULL);
+
+        gtk_box_pack_start (GTK_BOX (controls), stop_button, FALSE, FALSE, 2);
+    }
+
+    {
+        play_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PLAY);
+
+      g_signal_connect (G_OBJECT (play_button), "clicked", G_CALLBACK (pause_cb), NULL);
+
+      gtk_box_pack_start (GTK_BOX (controls), play_button, FALSE, FALSE, 2);
+    }
 
     {
 
-        button = gtk_button_new_with_label ("Hide subtitles");
+        button = gtk_button_new_with_label ("Hide srt");
 
         g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (subtitles_cb), NULL);
 
@@ -241,8 +261,7 @@ void Ui::start (Backend* back) {
     }
 
 	{
-		button = gtk_button_new_with_label ("Reset");
-
+        button = gtk_button_new_with_label ("Reset");
 		g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (reset_cb), NULL);
 
 		gtk_box_pack_start (GTK_BOX (controls), button, FALSE, FALSE, 2);
@@ -260,6 +279,8 @@ void Ui::start (Backend* back) {
 
 
 	gtk_widget_show_all (GTK_WIDGET (window));
+    gtk_widget_hide(play_button);
+
 }
 
 gboolean Ui::timeout (gpointer data) {
@@ -272,12 +293,6 @@ gboolean Ui::timeout (gpointer data) {
 	if (!DURATION_IS_VALID (duration))
 		return TRUE;
 
-#if 0
-	g_debug ("duration=%f", duration / ((double) 60 * 1000 * 1000 * 1000));
-	g_debug ("position=%llu", pos);
-#endif
-
-	/** @todo use events for seeking instead of checking for bad positions. */
 	if (pos != 0) {
 		double value;
 		value = (pos * (((double) 100) / duration));
@@ -308,10 +323,10 @@ gboolean Ui::init (gpointer data) {
     if (!_ui->getFileName().empty())
         _back->backend_play (_ui->getFileName(), _ui->getSrtFilename());
 
+	g_timeout_add (1000, timeout, NULL);
     if(_back->subtitlesIsHiding()) {
         gtk_widget_hide(subtitles_button);
     }
-	g_timeout_add (1000, timeout, NULL);
 
 	return FALSE;
 }

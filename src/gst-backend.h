@@ -14,12 +14,12 @@ public:
     void backend_play (const std::string filename, const std::string srtfilename="");
     void backend_stop (void);
     void backend_pause (void);
-    void backend_reset (void);
+    void backend_reset (std::string filename, std::string srtfilename);
     void backend_resume (void);
     void backend_seek (gint value);
     void backend_seek_absolute (guint64 value);
     void backend_set_window (gpointer window);
-
+    void stop();
     guint64 backend_query_position (void);
     guint64 backend_query_duration (void);
 

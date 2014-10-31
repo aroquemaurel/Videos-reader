@@ -1,13 +1,13 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 #include <iostream>
-
+#include <stdexcept>
 #include "ui.h"
 #include "gst-backend.h"
 class Player
 {
 public:
-    Player(int argc, char** argv);
+    Player(int argc, char** argv) throw(std::invalid_argument);
     void open();
 private:
     Ui* _ui;

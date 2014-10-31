@@ -25,6 +25,12 @@ static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 void Backend::backend_set_window(gpointer window_) {
     _window = window_;
 }
+
+void Backend::stop()
+{
+    backend_pause();
+    backend_seek(0);
+}
 static void on_pad_added (GstElement *element, GstPad     *pad, gpointer    data) {
     GstPad *sinkpad;
     GstElement *decoder = (GstElement *) data;
@@ -128,12 +134,8 @@ void Backend::backend_resume(void) {
     gst_element_set_state(_commands->getPipeline(), GST_STATE_PLAYING);
 }
 
-void Backend::backend_reset(void) {
-    gst_element_seek(_commands->getPipeline(), 1.0,
-			GST_FORMAT_TIME,
-            _seek_flags,
-			GST_SEEK_TYPE_SET, 0,
-			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
+void Backend::backend_reset(std::string filename, std::string srtfilename) {
+    backend_play(filename, srtfilename);
 }
 void Backend::showSubtitles(void) {
     g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", FALSE, NULL);

@@ -31,6 +31,7 @@ class Ui {
         void setSrtFilename(const std::string &getSrtFilename);
 
 
+        static void stop_cb(GtkWidget *widget, gpointer data);
 private:
         static gboolean delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
 		static void destroy (GtkWidget *widget, gpointer data);
