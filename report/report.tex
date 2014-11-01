@@ -36,27 +36,137 @@
 	\maketitle
 	\section{Partie I : en ligne de commande}
 	\subsection{Les formats OGV, Vorbis et Theora}
+	Avant de pouvoir définir ces trois formats, il parait important de définir le projet OGG.
+
+	OGG est un projet libre issue de la fondation Xiph.org, ce projet à pour but de fournir des formats audio et vidéo qui soient libre. Plusieurs formats de
+	fichiers ont ainsi vu le jour : \texttt{.oga} pour les fichiers audio, \texttt{.ogv} pour les fichiers vidéos et \texttt{.ogx} pour les applications.
+	
+	Les formats que je vais définir ci-dessous sont tous issues du projet OGG.
 	\begin{description}
-		\item[OGV]
-		\item[Vorbis] 
-		\item[Theora] 
+		\item[OGV] est le format issue du projet OGG permettant de lire des vidéos compressée tout en gardant une excellente qualité.
+		\item[Vorbis] est un format de compression/décompression audio libre, il peut faire concurrence au format propriétaire \texttt{.mp3}, cependant celui-ci est
+			moins connu et n'est supporté que par peu de lecteur audio bien qu'il ait de meilleurs performance que son concurrent.
+		\item[Theora] est un format de compression/décompression vidéo libre, il est souvent couplé à \textit{vorbis} pour l'audio, il est ainsi possible de lire une
+			vidéo avec le son. Il est soutenu par de nombreux logiciels libres tel que Firefox ou les distributions GNU/Linux. 
 	\end{description}
 	\subsection{Lire une vidéo}
+	\subsubsection{Lire un fichier audio}
+	\begin{lstlisting}[numbers=none,language=sh, caption=Lire un fichier audio -- Uniquement pour les fichier \texttt{.oga}]
+gst-launch filesrc location=music.oga ! oggdemux ! vorbisdec ! audioconvert ! alsasink
+	\end{lstlisting}
+	\begin{lstlisting}[numbers=none,language=sh, caption=Lire un fichier audio -- Pour tous les formats audio]
+gst-launch filesrc location=music.oga ! decodebin ! audioresample ! autoaudiosink
+	\end{lstlisting}
 	\subsubsection{Lire une vidéo avec le son}
+	\begin{lstlisting}[numbers=none,language=sh, caption=Lire une vidéo -- Uniquement pour les fichier \texttt{.ogv}]
+gst-launch filesrc location=video.ogv ! oggdemux ! theoradec ! ffmpegcolorspace ! autovideosink
+	\end{lstlisting}
+	\begin{lstlisting}[numbers=none,language=sh, caption=Lire une vidéo -- Pour tous les formats audio-vidéos]
+gst-launch filesrc location=video.ogv ! decodebin ! autovideosink
+	\end{lstlisting}
+	\begin{remarque}
+		Le plugin \textit{decodebin} permet à \textit{GStreamer} de détecter lui même la nature du conteneur et du codec à utiliser. Ainsi, nous pouvons lire une multitude de
+		formats différents en utilisant celui-ci.
+
+		Dans le projet, seul \textit{oggdemux} et \textit{theoradec} ont été utilisés.
+	\end{remarque}
 	\subsubsection{Lire une vidéo en remplaçant l'audio}
+	\begin{lstlisting}[language=sh, caption=Lire une vidéo avec le son de source différente]
+gst-launch filesrc location=video.ogv ! decodebin ! autovideosink filesrc location=music.oga ! decodebin ! autoaudiosink
+	\end{lstlisting}
 	\subsection{Lire une vidéo avec des sous-titres}
-\begin{lstlisting}[language=Bash]	
+	\begin{lstlisting}[language=Bash, caption=Lire une vidéo avec des sous-titres \texttt{.srt}]	
 gst-launch filesrc location=video.ogv ! oggdemux name=demux \ 
-filesrc location=video.srt ! subparse ! overlay. \
-demux. ! queue ! vorbisdec ! audioconvert !  autoaudiosink \
-demux. ! queue ! theoradec ! ffmpegcolorspace ! \
-subtitleoverlay name=overlay ! autovideosink
+	filesrc location=video.srt ! subparse ! overlay. \
+	demux. ! queue ! vorbisdec ! audioconvert !  autoaudiosink \
+	demux. ! queue ! theoradec ! ffmpegcolorspace ! \
+	subtitleoverlay name=overlay ! autovideosink
 \end{lstlisting}
 	\subsection{Enregistrer une vidéo avec les sous-titres incrustés}
 	\section{Partie II : en programmation C++}
+	Pour cette partie, j'ai choisi de développer l'application en C++, comme proposé dans le sujet. En effet, j'affectionne tout particulièrement ce langage en
+	raison de sa rapidité, de sa souplesse tout en restant extrêmement puissant et en utilisant le paradigme orienté objet.
+
+	L'application que j'ai développé ne permet de ne lire que des fichier au format \texttt{OGV} ou \texttt{Theora}, en raison des chaînes de traitement que j'ai
+	choisi d'utiliser. Il aurait été éventuellement possible d'utiliser \texttt{decodebin} afin d'être ouvert au maximum de formats possible, cependant celui-ci
+	rendait l'utilisation des sous-titres plus complexe.
+
+	Une autre solution permettant de mener ce projet à bien plus simplement aurait été l'utilisation de \texttt{playbin2}, cependant celui-ci n'étant pas
+	autorisé pour réaliser ce sujet, je me suis restreint au format \texttt{OGV}.
+
+	\subsection{Question 5}
+	\begin{lstlisting}[language=sh]
+ aroquemaurel@Luffy ~/projets/cpp/videos-reader <master> ./lecteurvideo video.ogv 
+	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=17cm]{img/1.png}
+	\end{figure}
+	Comme prévu dans le TP5, la vidéo est grisé est le son est réduit de 50\%. 
+
+	\subsection{Affichage des sous-titres}
+	Afin d'afficher des sous-titres, j'ai utilisé la ligne de commande suivante : 
+	\begin{lstlisting}[language=sh]
+gst-launch filesrc location=video.ogv ! oggdemux name=demux \
+filesrc location=video.srt ! subparse ! overlay. \
+demux. ! queue ! vorbisdec ! audioconvert ! autoaudiosink \
+demux. ! queue ! theoradec ! ffmpegcolorspace ! subtitleoverlay name=overlay ! autovideosink;
+	\end{lstlisting}
+
+	J'ai donc ajouté les éléments suivants, et ensuite effectué le linkage correctement : 
+	\begin{lstlisting}[language=C++]
+_commands->addElement ("subOverlay",  "subtitleoverlay");
+_commands->addElement ("subSource",   "filesrc");
+_commands->addElement ("subParse",    "subparse");
+
+_commands->setElement("subSource", "location", srtfilename);
+	\end{lstlisting}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=13cm]{img/2.png}
+	\end{figure}
+	\subsection{Interface GTK}
+	Mon projet à été pensé en respectant le pattern \texttt{M VC}, Modèle Vue-Contrôleur.
+
+	\begin{description}
+		\item[Modèle] Le backend du logiciel, l'appel aux méthodes gstreamer.
+		\item[Vue] Ce qui a attrait à l'apparence et l'interaction, tout est présent dans la classe Ui
+		\item[Contrôleur] Qui se charge de faire le lien entre le modèle et la vue. Ici il est lié à la vue, on peut considérer que les méthodes de callback sont
+			le contrôleur.
+	\end{description}
+
+	\begin{remarque}
+		GTK à été conçu pour le C et non pour le C++, ainsi cette bibliothèque fonctionne principalement avec un système de callbacks et de foncteur, chose
+		difficilement réalisable dans une classe C++. J'ai donc une classe \texttt{Ui} possédant une majorité de méthodes statiques. 
+
+		Il aurait été plus élégant d'utiliser la bibliothèque \textit{Gtkmm}, bibliothèque GTK pensée pour le C++ permettant d'avoir toute la puissance du
+		paradigme objet. Cependant, celle-ci n'étant pas installée en salle de TP, je n'ai pas pu m'en servir.
+	\end{remarque}
+
+	% TODO FIGURE
+	\begin{remarque}
+		Les images présents dans les boutons sont des images obtenus du gestionnaire de bureau, ici Mate, il se peut que chez vous ceux-ci s'affichent
+		différemment, ou ne s'affiche pas du tout. 
+
+		Cet affichage permet d'avoir un système d'exploitation uniformisé, GTK possède une multitude de boutons prédéfinis, pour cela il suffit de créer un
+		bouton comme suit.
+		\begin{lstlisting}[language=C, numbers=none,linewidth=400px ]
+stop_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_STOP);
+		\end{lstlisting}
+	\end{remarque}
+
+	\subsection{Fonctionnalités ajoutées au lecteur}
+	Le lecteur précédent étant assez basique, plusieurs fonctionnalités ont été ajoutés au lecteur audio-vidéo afin de gagner en confort : 
+	\begin{itemize}
+		\item Une barre << slider >> permettant d'observer l'avancement du programme
+		\item Un label affichant la durée de la vidéo, et le
+			temps actuel parcouru. (en secondes)
+		\item Une possibilité de mettre la vidéo en plein
+			écran, à l'aide de la touche << F >> ou << F11 >>.
+	\end{itemize}
 	\subsection{}
-	\subsection{}
-	\subsection{}
-	\subsection{}
-	\subsection{}
-\end{document}
+	\appendix
+	\lstlistoflistings
+	\listoffigures
+	\end{document}
