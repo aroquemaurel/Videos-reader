@@ -82,7 +82,15 @@ gst-launch filesrc location=video.ogv ! oggdemux name=demux \
 	demux. ! queue ! theoradec ! ffmpegcolorspace ! \
 	subtitleoverlay name=overlay ! autovideosink
 \end{lstlisting}
-	\subsection{Enregistrer une vidéo avec les sous-titres incrustés}
+	\subsection{Enregistrer une vidéo avec les sous-titres incrustés et un son externe}
+	\begin{lstlisting}[language=Sh, caption=Enregistrer une vidéo avec l'audio \texttt{music.oga}\, l'image \texttt{video.ogv} et les sous-titres]
+gst-launch filesrc location=video.ogv ! oggdemux name=demux \
+filesrc location=music.oga \
+! queue ! oggdemux ! vorbisdec ! audioconvert ! vorbisenc ! mux. demux. \
+! queue ! theoradec !  subtitleoverlay name=sub !  theoraenc ! \
+mux. filesrc location =./video.srt !  subparse ! sub. oggmux name=mux ! \
+filesink location=videoQ4.ogv
+	\end{lstlisting}
 	\section{Partie II : en programmation C++}
 	Pour cette partie, j'ai choisi de développer l'application en C++, comme proposé dans le sujet. En effet, j'affectionne tout particulièrement ce langage en
 	raison de sa rapidité, de sa souplesse tout en restant extrêmement puissant et en utilisant le paradigme orienté objet.
@@ -101,30 +109,62 @@ gst-launch filesrc location=video.ogv ! oggdemux name=demux \
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=17cm]{img/1.png}
+		\caption{Lecteur vidéo sans interface}
 	\end{figure}
 	Comme prévu dans le TP5, la vidéo est grisé est le son est réduit de 50\%. 
 
+	J'ai cependant modifié légèrement le code fournit, dorénavant, j'ai créé une classe permettant de fournir des méthodes pour tous les \texttt{GstElement}.
+	L'interface de cette classe me permet d'éviter d'avoir des dizaines de variables déclarés\footnote{Ceci grâce à une \texttt{std::map}}, de vérifier que tout a été alloué correctement et de tout ajouter
+	automatiquement au pipeline, ceux en un minimum de lignes.
+	
+	\begin{lstlisting}[language=C++, caption=Interface de gestion des commandes GStreamer]
+class GStreamerCommands {
+public:
+	GStreamerCommands(void);
+	~GStreamerCommands(void);
+
+	void setElement(std::string nameElement, const std::string nameArg, const std::string valuePropertie);
+	void setElement(std::string nameElement, const std::string nameArg, const double valuePropertie);
+	void setElement(std::string nameElement, const std::string nameArg, const bool valuePropertie);
+	GstElement *getElement(std::string s);
+	void addElement(std::string name, std::string value);
+
+	void checkAllElements(void);
+	void addAllElements(void);
+	GstElement *getPipeline(void) const;
+	void setPipeline(GstElement *getPipeline);
+};
+	\end{lstlisting}
 	\subsection{Affichage des sous-titres}
 	Afin d'afficher des sous-titres, j'ai utilisé la ligne de commande suivante : 
 	\begin{lstlisting}[language=sh]
-gst-launch filesrc location=video.ogv ! oggdemux name=demux \
-filesrc location=video.srt ! subparse ! overlay. \
-demux. ! queue ! vorbisdec ! audioconvert ! autoaudiosink \
-demux. ! queue ! theoradec ! ffmpegcolorspace ! subtitleoverlay name=overlay ! autovideosink;
+		gst-launch filesrc location=video.ogv ! oggdemux name=demux \
+		filesrc location=video.srt ! subparse ! overlay. \
+		demux. ! queue ! vorbisdec ! audioconvert ! autoaudiosink \
+		demux. ! queue ! theoradec ! ffmpegcolorspace ! subtitleoverlay name=overlay ! autovideosink;
 	\end{lstlisting}
 
 	J'ai donc ajouté les éléments suivants, et ensuite effectué le linkage correctement : 
 	\begin{lstlisting}[language=C++]
-_commands->addElement ("subOverlay",  "subtitleoverlay");
-_commands->addElement ("subSource",   "filesrc");
-_commands->addElement ("subParse",    "subparse");
+		// Add all srt elements
+		_commands->addElement ("subOverlay",  "subtitleoverlay");
+		_commands->addElement ("subSource",   "filesrc");
+		_commands->addElement ("subParse",    "subparse");
 
-_commands->setElement("subSource", "location", srtfilename);
+		// Linkage
+		gst_element_link_many (_commands->getElement("videoQueue"), _commands->getElement("videoDecoder"),
+		_commands->getElement("videoConv"), _commands->getElement("subOverlay"),
+		_commands->getElement("videosink"), NULL);
+		gst_element_link_many (_commands->getElement("audioQueue"), _commands->getElement("audioDecoder"),
+		_commands->getElement("audioConv"), _commands->getElement("audiosink"), NULL);
+		g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("audioQueue"));
+		g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("videoQueue"));
 	\end{lstlisting}
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=13cm]{img/2.png}
+		\includegraphics[width=14cm]{img/2.png}
+		\caption{Lecteur vidéo avec sous-titres sans interface}
 	\end{figure}
 	\subsection{Interface GTK}
 	Mon projet à été pensé en respectant le pattern \texttt{M VC}, Modèle Vue-Contrôleur.
@@ -145,6 +185,11 @@ _commands->setElement("subSource", "location", srtfilename);
 	\end{remarque}
 
 	% TODO FIGURE
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=15cm]{img/3.png}
+		\caption{Interface du lecteur multimédia développé}
+	\end{figure}
 	\begin{remarque}
 		Les images présents dans les boutons sont des images obtenus du gestionnaire de bureau, ici Mate, il se peut que chez vous ceux-ci s'affichent
 		différemment, ou ne s'affiche pas du tout. 
@@ -152,20 +197,56 @@ _commands->setElement("subSource", "location", srtfilename);
 		Cet affichage permet d'avoir un système d'exploitation uniformisé, GTK possède une multitude de boutons prédéfinis, pour cela il suffit de créer un
 		bouton comme suit.
 		\begin{lstlisting}[language=C, numbers=none,linewidth=400px ]
-stop_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_STOP);
+			stop_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_STOP);
 		\end{lstlisting}
 	\end{remarque}
 
 	\subsection{Fonctionnalités ajoutées au lecteur}
 	Le lecteur précédent étant assez basique, plusieurs fonctionnalités ont été ajoutés au lecteur audio-vidéo afin de gagner en confort : 
 	\begin{itemize}
-		\item Une barre << slider >> permettant d'observer l'avancement du programme
+		\item Une barre << slider >> permettant d'observer l'avancement du programme et de contrôler la vidéo
 		\item Un label affichant la durée de la vidéo, et le
-			temps actuel parcouru. (en secondes)
-		\item Une possibilité de mettre la vidéo en plein
-			écran, à l'aide de la touche << F >> ou << F11 >>.
+			temps actuel parcouru.\footnote{Au format hh:mm:ss, à l'aide de la macro \texttt{GST\_TIME\_FORMAT}}
+		\item Une possibilité de mettre la vidéo en plein écran, à l'aide de la touche << F >> ou << F11 >>.
+		\item Gestion du son via le bouton de son. Celui-ci va de 0 à 2 fois le son original de la vidéo.
 	\end{itemize}
-	\subsection{}
+
+	J'ai également mis en place des raccourcies à l'aide du clavier afin que l'utilisateur gagne au maximum du temps : 
+
+	\begin{tabular}{c|p{10cm}}
+		\textbf{Touche du clavier} & \textbf{Action}\\
+		\hline
+		F ou F11& Met la vidéo en Met la vidéo en plein écran\\
+		\hline
+		Barre d'espace ou P&Pause ou play en fonction de l'état courant de la vidéo\\
+		\hline
+		S&Affiche ou cache les sous-titres en fonction de l'état actuel des sous-titres\\
+		\hline
+		R&Redémarre la vidéo\\
+		\hline
+		Q&Quitte le lecteur vidéo\\
+		\hline
+		<< Backspace >> / Retour arrière &Stop la lecture de la vidéo \\
+		\hline
+		Flèches gauche et droite&Recule ou avance respectivement dans la vidéo\\
+		\hline
+		Flèche haut et bas & Augmente ou diminue le volume sonore\\
+		\hline
+	\end{tabular}
+	\subsection{Activer ou désactiver les sous-titres}
+	L'utilisateur peut activer ou non les sous-titres à l'aide du bouton situé en bas de l'interface. 
+
+	Afin de pouvoir afficher ou non les sous-titres, il m'a suffit d'utiliser l'argument \texttt{silent} de \texttt{subtitleoverlay}.
+	\begin{lstlisting}[language=C++, caption=Affichage ou non des sous-titres]
+		// Désactive les sous-titres
+		g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL); 
+		// Active les sous-titres
+		g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", true, NULL); 
+
+		// Ou avec mon interface
+		_commands->setElement("subOverlay", "silent", false);
+
+	\end{lstlisting}
 	\appendix
 	\lstlistoflistings
 	\listoffigures
