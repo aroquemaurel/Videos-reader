@@ -51,6 +51,7 @@ private:
 		std::string _fileName;
         std::string _srtFilename;
 
+        inline static std::string time2String(const guint64 time);
 };
 
 

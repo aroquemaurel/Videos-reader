@@ -282,13 +282,23 @@ void Ui::start (Backend* back) {
 	}
 
     {
-        labelProgression = gtk_label_new("0");
+        labelProgression = gtk_label_new("00:00:00 / 00:00:00");
         gtk_box_pack_end(GTK_BOX(controls), labelProgression, FALSE, FALSE, 2);
     }
 
 	gtk_widget_show_all (GTK_WIDGET (window));
     gtk_widget_hide(play_button);
 
+}
+inline std::string Ui::time2String(const guint64 time) {
+    char buff[512];
+    std::string buffString;
+    std::string ret;
+    sprintf(buff, "%" GST_TIME_FORMAT "\n", GST_TIME_ARGS(time));
+    buffString = std::string(buff);
+    ret = buffString.substr(0, buffString.find("."));
+
+    return ret;
 }
 
 gboolean Ui::timeout (gpointer data) {
@@ -301,13 +311,8 @@ gboolean Ui::timeout (gpointer data) {
 	if (!DURATION_IS_VALID (duration))
 		return TRUE;
     std::ostringstream s1, s2;
-    double currentTime = _back->backend_query_position();
-    double finalTime = _back->backend_query_duration();
-    currentTime /= 1000000000;
-    finalTime /= 1000000000;
-    s1 << std::setprecision(2) << currentTime;
-    s2 << std::setprecision(2) << finalTime;
-    gtk_label_set_text(GTK_LABEL(labelProgression), std::string(s1.str()+ " / "+s2.str()).c_str());
+    gtk_label_set_text(GTK_LABEL(labelProgression), std::string(time2String(_back->backend_query_position())+ " / "+
+                                                                time2String(_back->backend_query_duration())).c_str());
 	if (pos != 0) {
 		double value;
 		value = (pos * (((double) 100) / duration));
@@ -338,7 +343,7 @@ gboolean Ui::init (gpointer data) {
     if (!_ui->getFileName().empty())
         _back->backend_play (_ui->getFileName(), _ui->getSrtFilename());
 
-	g_timeout_add (1000, timeout, NULL);
+    g_timeout_add (300, timeout, NULL);
     if(_back->subtitlesIsHiding()) {
         gtk_widget_hide(subtitles_button);
     }
