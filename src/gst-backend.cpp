@@ -69,14 +69,15 @@ void Backend::setCurrentVolume(double currentVolume)
 
 void Backend::backend_setVolume(const double volume) {
     _currentVolume = volume;
-    g_object_set (G_OBJECT (_commands->getElement("volume")), "volume", volume, NULL);
+    _commands->setElement("volume", "volume", volume);
+
 }
 void Backend::backend_volumeUp() {
     backend_setVolume(_currentVolume+0.20 < 2 ? _currentVolume + 0.20 : _currentVolume);
 }
 
 void Backend::backend_volumeDown() {
-backend_setVolume(_currentVolume > 0 ? _currentVolume - 0.20 : 0);
+    backend_setVolume(_currentVolume > 0 ? _currentVolume - 0.20 : 0);
 }
 
 void Backend::backend_play(const std::string filename, const std::string srtfilename) {
@@ -89,7 +90,7 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
         _commands->addElement ("subParse",          "subparse");
 
         _commands->setElement("subSource", "location", srtfilename);
-        g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL);
+        _commands->setElement("subOverlay", "silent", false);
     }
 
     _commands->addElement("source", "filesrc");
@@ -161,12 +162,14 @@ void Backend::backend_reset(std::string filename, std::string srtfilename) {
     backend_play(filename, srtfilename);
 }
 void Backend::showSubtitles(void) {
-    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL);
+    _commands->setElement("subOverlay", "silent", false);
+
     _subtitlesIsHidding = false;
 }
 
 void Backend::hideSubtitles(void) {
-    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", true, NULL);
+    _commands->setElement("subOverlay", "silent", true);
+
     _subtitlesIsHidding = true;
 }
 

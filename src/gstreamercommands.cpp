@@ -17,8 +17,12 @@ void GStreamerCommands::addElement(std::string name, std::string value) {
 void GStreamerCommands::setElement(std::string nameElement, const std::string nameArg, const std::string valuePropertie) {
     g_object_set (G_OBJECT (getElement(nameElement)), nameArg.c_str(), valuePropertie.c_str(), NULL);
 }
-
-
+void GStreamerCommands::setElement(std::string nameElement, const std::string nameArg, const bool valuePropertie) {
+    g_object_set (G_OBJECT (getElement(nameElement)), nameArg.c_str(), valuePropertie, NULL);
+}
+void GStreamerCommands::setElement(std::string nameElement, const std::string nameArg, const double valuePropertie) {
+    g_object_set (G_OBJECT (getElement(nameElement)), nameArg.c_str(), valuePropertie, NULL);
+}
 void GStreamerCommands::checkAllElements() {
     std::map<std::string, GstElement*>::iterator it;
     for(it = _elements.begin() ; it != _elements.end() ; ++it) {
