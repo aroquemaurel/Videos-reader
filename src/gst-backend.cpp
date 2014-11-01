@@ -19,7 +19,7 @@ static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 			break;
 	}
 
-	return TRUE;
+    return true;
 }
 
 void Backend::backend_set_window(gpointer window_) {
@@ -57,6 +57,9 @@ void Backend::incrustVideo() {
     }
 }
 
+void Backend::backend_setVolume(const double volume) {
+    g_object_set (G_OBJECT (_commands->getElement("volume")), "volume", volume, NULL);
+}
 
 void Backend::backend_play(const std::string filename, const std::string srtfilename) {
 	backend_stop();
@@ -68,12 +71,13 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
         _commands->addElement ("subParse",          "subparse");
 
         _commands->setElement("subSource", "location", srtfilename);
-        g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", FALSE, NULL);
+        g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL);
     }
 
     _commands->addElement("source", "filesrc");
     _commands->addElement("demuxer", "oggdemux");
     _commands->addElement("audioQueue", "queue");
+    _commands->addElement("volume", "volume");
     _commands->addElement("videoQueue", "queue");
     _commands->addElement("audioDecoder", "vorbisdec");
     _commands->addElement("videoDecoder", "theoradec");
@@ -84,6 +88,7 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
 
     _commands->checkAllElements();
     _commands->setElement("source", "location", filename);
+    backend_setVolume(0.5);
     _commands->addAllElements();
     createBusForMessages();
 
@@ -100,7 +105,7 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
     }
 
     gst_element_link_many (_commands->getElement("audioQueue"), _commands->getElement("audioDecoder"),
-                           _commands->getElement("audioConv"), _commands->getElement("audiosink"), NULL);
+                           _commands->getElement("audioConv"), _commands->getElement("volume"),_commands->getElement("audiosink"), NULL);
 
     g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("audioQueue"));
     g_signal_connect (_commands->getElement("demuxer"), "pad-added", G_CALLBACK (on_pad_added), _commands->getElement("videoQueue"));
@@ -138,12 +143,12 @@ void Backend::backend_reset(std::string filename, std::string srtfilename) {
     backend_play(filename, srtfilename);
 }
 void Backend::showSubtitles(void) {
-    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", FALSE, NULL);
+    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL);
     _subtitlesIsHidding = false;
 }
 
 void Backend::hideSubtitles(void) {
-    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", TRUE, NULL);
+    g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", true, NULL);
     _subtitlesIsHidding = true;
 }
 
@@ -170,7 +175,7 @@ void Backend::backend_seek_absolute(guint64 value) {
 guint64 Backend::backend_query_position(void) {
 	GstFormat format = GST_FORMAT_TIME;
 	gint64 cur;
-	gboolean result;
+    bool result;
 
     result = gst_element_query_position(_commands->getPipeline(), &format, &cur);
 	if(!result || format != GST_FORMAT_TIME)
@@ -182,7 +187,7 @@ guint64 Backend::backend_query_position(void) {
 guint64 Backend::backend_query_duration(void) {
 	GstFormat format = GST_FORMAT_TIME;
 	gint64 cur;
-	gboolean result;
+    bool result;
 
     result = gst_element_query_duration(_commands->getPipeline(), &format, &cur);
 	if(!result || format != GST_FORMAT_TIME)

@@ -21,7 +21,7 @@ class Ui {
 		std::string getFileName();
 
 
-		static gboolean init (gpointer data);
+        static gboolean init (gpointer data);
 
         static void setUi(Ui* ui);
 
@@ -32,13 +32,16 @@ class Ui {
 
 
         static void stop_cb(GtkWidget *widget, gpointer data);
+        static void volume_cb(GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data);
 private:
-        static gboolean delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
+        static bool delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
 		static void destroy (GtkWidget *widget, gpointer data);
 		static void realize_cb (GtkWidget * widget, gpointer data);
 		static void pause_cb (GtkWidget *widget, gpointer data);
 		static void reset_cb (GtkWidget *widget, gpointer data);
-		static gboolean key_press (GtkWidget *widget, GdkEventKey *event, gpointer data);
+        static bool key_press (GtkWidget *widget, GdkEventKey *event, gpointer data);
+        static bool mousse_press(GtkWidget *widget, GdkEvent *event, gpointer data);
+
         static void subtitles_cb(GtkWidget *widget, gpointer data);
         static void seek_cb(GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data);
         static gboolean timeout(gpointer data);

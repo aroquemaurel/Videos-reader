@@ -1,6 +1,6 @@
 #include <gst/gst.h> 
 #include <glib.h>
-static gboolean bus_call (GstBus     *bus, GstMessage *msg, gpointer    data) {
+static bool bus_call (GstBus     *bus, GstMessage *msg, gpointer    data) {
   GMainLoop *loop = (GMainLoop *) data;
   switch (GST_MESSAGE_TYPE (msg)) {
 
@@ -24,7 +24,7 @@ static gboolean bus_call (GstBus     *bus, GstMessage *msg, gpointer    data) {
     default:
       break;
   }
-  return TRUE;
+  return true;
 }
 
 static void on_pad_added (GstElement *element, GstPad     *pad, gpointer    data) {
@@ -49,7 +49,7 @@ int main (int   argc, char *argv[]) {
   /* Initialisation */
   gst_init (&argc, &argv);
 
- loop = g_main_loop_new (NULL, FALSE);
+ loop = g_main_loop_new (NULL, false);
 
   /* Verification des arguments d'entree */
   if (argc != 2) {
@@ -71,7 +71,7 @@ int main (int   argc, char *argv[]) {
   }
 
   /* Mise en place du pipeline */
-  /* on configurer le nom du fichier a l'element source */
+  /* on configurer le nom du fichier a l'element source */
   g_object_set (G_OBJECT (source), "location", argv[1], NULL);
 
   /* on rajoute une gestion de messages */

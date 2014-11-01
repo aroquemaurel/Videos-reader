@@ -26,6 +26,7 @@ public:
     void showSubtitles();
     void hideSubtitles();
     bool subtitlesIsHiding();
+    void backend_setVolume(const double volume);
 private:
     gpointer _window;
     GstSeekFlags _seek_flags;
