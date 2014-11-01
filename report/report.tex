@@ -72,7 +72,7 @@ gst-launch filesrc location=video.ogv ! decodebin ! autovideosink
 	\end{remarque}
 	\subsubsection{Lire une vidéo en remplaçant l'audio}
 	\begin{lstlisting}[language=sh, caption=Lire une vidéo avec le son de source différente]
-gst-launch filesrc location=video.ogv ! decodebin ! autovideosink filesrc location=music.oga ! decodebin ! autoaudiosink
+gst-launch filesrc location=video.ogv ! decodebin ! autovideosink filesrc location=Thunderstruck.ogg ! decodebin ! autoaudiosink
 	\end{lstlisting}
 	\subsection{Lire une vidéo avec des sous-titres}
 	\begin{lstlisting}[language=Bash, caption=Lire une vidéo avec des sous-titres \texttt{.srt}]	
@@ -89,7 +89,7 @@ filesrc location=music.oga \
 ! queue ! oggdemux ! vorbisdec ! audioconvert ! vorbisenc ! mux. demux. \
 ! queue ! theoradec !  subtitleoverlay name=sub !  theoraenc ! \
 mux. filesrc location =./video.srt !  subparse ! sub. oggmux name=mux ! \
-filesink location=videoQ4.ogv
+filesink location=videoOutput.ogv
 	\end{lstlisting}
 	\section{Partie II : en programmation C++}
 	Pour cette partie, j'ai choisi de développer l'application en C++, comme proposé dans le sujet. En effet, j'affectionne tout particulièrement ce langage en
