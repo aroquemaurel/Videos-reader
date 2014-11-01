@@ -56,9 +56,27 @@ void Backend::incrustVideo() {
         gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(_commands->getElement("videosink")), GPOINTER_TO_INT(_window));
     }
 }
+double Backend::getCurrentVolume() const
+{
+    return _currentVolume;
+}
+
+void Backend::setCurrentVolume(double currentVolume)
+{
+    _currentVolume = currentVolume;
+}
+
 
 void Backend::backend_setVolume(const double volume) {
+    _currentVolume = volume;
     g_object_set (G_OBJECT (_commands->getElement("volume")), "volume", volume, NULL);
+}
+void Backend::backend_volumeUp() {
+    backend_setVolume(_currentVolume+0.20 < 2 ? _currentVolume + 0.20 : _currentVolume);
+}
+
+void Backend::backend_volumeDown() {
+backend_setVolume(_currentVolume > 0 ? _currentVolume - 0.20 : 0);
 }
 
 void Backend::backend_play(const std::string filename, const std::string srtfilename) {

@@ -27,6 +27,11 @@ public:
     void hideSubtitles();
     bool subtitlesIsHiding();
     void backend_setVolume(const double volume);
+    void backend_volumeDown();
+    void backend_volumeUp();
+    double getCurrentVolume() const;
+    void setCurrentVolume(double getCurrentVolume);
+
 private:
     gpointer _window;
     GstSeekFlags _seek_flags;
@@ -36,6 +41,7 @@ private:
     void incrustVideo();
 
     bool _subtitlesIsHidding;
+    double _currentVolume;
 };
 
 #endif /* GST_BACKEND_H */

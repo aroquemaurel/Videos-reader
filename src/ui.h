@@ -33,6 +33,8 @@ class Ui {
 
         static void stop_cb(GtkWidget *widget, gpointer data);
         static void volume_cb(GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data);
+        static void volume_up();
+        static void volume_down();
 private:
         static bool delete_event (GtkWidget *widget, GdkEvent *event, gpointer data);
 		static void destroy (GtkWidget *widget, gpointer data);
@@ -55,6 +57,8 @@ private:
         std::string _srtFilename;
 
         inline static std::string time2String(const guint64 time);
+
+        static int _lastVoume;
 };
 
 

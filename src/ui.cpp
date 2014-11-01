@@ -111,6 +111,12 @@ bool Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
         case GDK_s:
             _ui->subtitles_cb(NULL, 0);
         break;
+        case GDK_Up:
+            _ui->volume_up();
+            break;
+    case GDK_Down:
+            _ui->volume_down();
+            break;
     case GDK_BackSpace:
         _ui->stop_cb(NULL, 0);
 		default:
@@ -121,6 +127,12 @@ bool Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 }
 void Ui::volume_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data) {
     _back->backend_setVolume(value/100);
+}
+void Ui::volume_up () {
+    _back->backend_volumeUp();
+}
+void Ui::volume_down() {
+    _back->backend_volumeDown();
 }
 
 void Ui::seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
