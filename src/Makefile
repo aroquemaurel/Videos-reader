@@ -9,7 +9,7 @@ GTK_CFLAGS := $(shell pkg-config --cflags gtk+-2.0)
 
 CFLAGS := -ggdb -Wall $(EXTRA_WARNINGS)
 
-player: ui.o gst-backend.o player.o main.o gstreamercommands.o
+player: ui.o backend.o player.o main.o gstreamercommands.o
 player: CFLAGS := $(CFLAGS) $(GTK_CFLAGS) $(GST_CFLAGS)
 player: LIBS := $(LIBS) $(GTK_LIBS) $(GST_LIBS)
 binaries += player

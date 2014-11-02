@@ -1,5 +1,5 @@
-gst-backend.cpp
-gst-backend.h
+backend.cpp
+backend.h
 lecteuraudio.cpp
 lecteuraudiovideo.cpp
 Makefile

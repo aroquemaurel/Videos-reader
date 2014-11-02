@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "ui.h"
-#include "gst-backend.h"
+#include "backend.h"
 class Player
 {
 public:

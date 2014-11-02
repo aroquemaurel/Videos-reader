@@ -1,26 +1,22 @@
 #include "ui.h"
-#include "gst-backend.h"
+#include "backend.h"
 #include "player.h"
-#include <sstream>
-#include <iomanip>
 
-static GtkWidget *video_output;
-static GtkWidget *pause_button;
-static GtkWidget *play_button;
-static GtkWidget *scale;
-static GtkWidget *volume;
 
-static guint64 duration;
-static GtkWindow *window;
-static GtkWidget *controls;
-static GtkWidget *subtitles_button;
-static GtkWidget *stop_button;
-static GtkWidget *labelProgression;
+unsigned long Ui::_duration = 0;
+GtkWidget* Ui::_video_output = 0;
+GtkWidget* Ui::_pause_button = 0;
+GtkWidget* Ui::_play_button = 0;
+GtkWidget* Ui::_scale = 0;
+GtkWidget* Ui::_volume = 0;
+GtkWindow* Ui::_window = 0;
+GtkWidget* Ui::_controls = 0;
+GtkWidget* Ui::_subtitles_button = 0;
+GtkWidget* Ui::_stop_button = 0;
+GtkWidget* Ui::_labelProgression = 0;
 
-#define DURATION_IS_VALID(x) (x != 0 && x != (guint64) -1)
 Ui* Ui::_ui = 0;
 Backend* Ui::_back = 0;
-GtkWidget* Ui::menu_bar = 0;
 
 Ui::Ui() {
     Ui::_ui = this;
@@ -36,25 +32,25 @@ Ui::Ui(std::string filepath, std::string srtfilename)
 void Ui::toggle_paused (void) {
     static bool paused = false;
 	if (paused) {
-        _back->backend_resume ();
-        gtk_widget_hide(play_button);
-        gtk_widget_show(pause_button);
+        _back->resume ();
+        gtk_widget_hide(_play_button);
+        gtk_widget_show(_pause_button);
         paused = false;
 	} else {
-        _back->backend_pause ();
-        gtk_widget_hide(pause_button);
-        gtk_widget_show(play_button);
+        _back->pause ();
+        gtk_widget_hide(_pause_button);
+        gtk_widget_show(_play_button);
         paused = true;
 	}
 }
 
 void Ui::toggle_fullscreen (void) {
-	if (gdk_window_get_state (GTK_WIDGET (window)->window) == GDK_WINDOW_STATE_FULLSCREEN) {
-		gtk_window_unfullscreen (window);
-        gtk_widget_show (controls);
+    if (gdk_window_get_state (GTK_WIDGET (_window)->window) == GDK_WINDOW_STATE_FULLSCREEN) {
+        gtk_window_unfullscreen (_window);
+        gtk_widget_show (_controls);
 	} else {
-		gtk_window_fullscreen (window);
-        gtk_widget_hide (controls);
+        gtk_window_fullscreen (_window);
+        gtk_widget_hide (_controls);
 	}
 }
 
@@ -64,15 +60,15 @@ void Ui::pause_cb (GtkWidget *widget, gpointer data) {
 
 void Ui::stop_cb(GtkWidget *widget, gpointer data) {
     _back->stop();
-    gtk_range_set_value (GTK_RANGE (scale), 0);
+    gtk_range_set_value (GTK_RANGE (_scale), 0);
 }
 
 void Ui::reset_cb (GtkWidget *widget, gpointer data) {
-    _back->backend_reset (_ui->getFileName(), _ui->getSrtFilename());
+    _back->reset (_ui->getFileName(), _ui->getSrtFilename());
 }
 
 bool Ui::delete_event (GtkWidget *widget, GdkEvent *event, gpointer data) {
-    _back->backend_stop ();
+    _back->stop ();
     return false;
 }
 
@@ -94,13 +90,13 @@ bool Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
 			break;
 		case GDK_R:
 		case GDK_r:
-            _back->backend_reset (_ui->getFileName(), _ui->getSrtFilename());
+            _back->reset (_ui->getFileName(), _ui->getSrtFilename());
 			break;
 		case GDK_Right:
-            _back->backend_seek (10);
+            _back->seek (10);
 			break;
 		case GDK_Left:
-            _back->backend_seek (-10);
+            _back->seek (-10);
 			break;
 		case GDK_Escape:
 		case GDK_Q:
@@ -126,94 +122,44 @@ bool Ui::key_press (GtkWidget *widget, GdkEventKey *event, gpointer data) {
     return true;
 }
 void Ui::volume_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data) {
-    _back->backend_setVolume(value/100);
+    _back->setVolume(value/100);
 }
 void Ui::volume_up () {
-    _back->backend_volumeUp();
+    _back->volumeUp();
 }
 void Ui::volume_down() {
-    _back->backend_volumeDown();
+    _back->volumeDown();
 }
 
 void Ui::seek_cb (GtkRange *range, GtkScrollType scroll, gdouble value, gpointer data)
 {
 	guint64 to_seek;
 
-	if (!DURATION_IS_VALID (duration))
-        duration = _back->backend_query_duration ();
+    if (!durationIsValid (_duration))
+        _duration = _back->queryDuration ();
 
-	if (!DURATION_IS_VALID (duration))
+    if (!durationIsValid (_duration))
 		return;
 
-	to_seek = (value / 100) * duration;
+    to_seek = (value / 100) * _duration;
 
-    _back->backend_seek_absolute (to_seek);
+    _back->absoluteSeek (to_seek);
 }
 
 void Ui::realize_cb (GtkWidget * widget, gpointer data) {
-	GdkWindow *window = gtk_widget_get_window (video_output);
+    GdkWindow *window = gtk_widget_get_window (_video_output);
 
 	gdk_window_ensure_native (window);
-    _back->backend_set_window (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
+    _back->setWindow (GINT_TO_POINTER (GDK_WINDOW_XID (window)));
 }
 
 void Ui::subtitles_cb(GtkWidget * widget, gpointer data) {
     if(_back->subtitlesIsHiding()) {
         _back->showSubtitles();
-        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Hide srt");
+        gtk_button_set_label(GTK_BUTTON(_subtitles_button), "Hide srt");
     } else {
         _back->hideSubtitles();
-        gtk_button_set_label(GTK_BUTTON(subtitles_button), "Show srt");
-    }
-}
-void Ui::createMenus(GtkWidget *vbox)
-{
-    GtkWidget *menuFile;
-    GtkWidget *menuVideo;
-    GtkWidget *fileLabel;
-    GtkWidget *menuFile_items;
-    GtkWidget *menuVideo_items;
-    GtkWidget *videoLabel;
-
-    //***//
-    {
-
-        /* Init the menu-widget, and remember -- never
-         * gtk_show_widget() the menu widget!! */
-        menuFile = gtk_menu_new();
-        menuVideo = gtk_menu_new();
-
-        fileLabel = gtk_menu_item_new_with_label("Fichier");
-        gtk_widget_show(fileLabel);
-        menuFile_items = gtk_menu_item_new_with_label("Ouvrir un fichier");
-        gtk_menu_append(GTK_MENU (menuFile), menuFile_items);
-        menuFile_items = gtk_menu_item_new_with_label("Quitter");
-        gtk_widget_show(menuFile_items);
-        gtk_menu_append(GTK_MENU (menuFile), menuFile_items);
-
-
-        videoLabel = gtk_menu_item_new_with_label("Vidéo");
-        gtk_widget_show(videoLabel);
-        menuVideo_items = gtk_menu_item_new_with_label("Ajouter des sous-titre");
-        gtk_widget_show(menuVideo_items);
-        gtk_menu_append(GTK_MENU (menuVideo), menuVideo_items);
-
-
-        /* Now we specify that we want our newly created "menu" to be the menu for the "root menu" */
-        gtk_menu_item_set_submenu(GTK_MENU_ITEM (fileLabel), menuFile);
-        gtk_menu_item_set_submenu(GTK_MENU_ITEM (videoLabel), menuVideo);
-
-
-        /* Create a menu-bar to hold the menus and add it to our main window*/
-        menu_bar = gtk_menu_bar_new();
-        gtk_container_add(GTK_CONTAINER(vbox), menu_bar);
-        gtk_widget_show(menu_bar);
-
-        /* And finally we append the menu-item to the menu-bar -- this is the "root"
-         * menu-item I have been raving about =) */
-        gtk_menu_bar_append(GTK_MENU_BAR (menu_bar), fileLabel);
-        gtk_menu_bar_append(GTK_MENU_BAR (menu_bar), videoLabel);
-
+        gtk_button_set_label(GTK_BUTTON(_subtitles_button), "Show srt");
     }
 }
 
@@ -221,58 +167,58 @@ void Ui::start (Backend* back) {
 	GtkWidget *button;
 	GtkWidget *vbox;
     _back = back;
-	window = GTK_WINDOW (gtk_window_new (GTK_WINDOW_TOPLEVEL));
+    _window = GTK_WINDOW (gtk_window_new (GTK_WINDOW_TOPLEVEL));
 
-	g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (delete_event), NULL);
-	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (Ui::destroy), NULL);
-	g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (key_press), NULL);
-    gtk_container_set_border_width (GTK_CONTAINER (window), 0);
+    g_signal_connect (G_OBJECT (_window), "delete_event", G_CALLBACK (delete_event), NULL);
+    g_signal_connect (G_OBJECT (_window), "destroy", G_CALLBACK (Ui::destroy), NULL);
+    g_signal_connect (G_OBJECT (_window), "key-press-event", G_CALLBACK (key_press), NULL);
+    gtk_container_set_border_width (GTK_CONTAINER (_window), 0);
 
     vbox = gtk_vbox_new (false, 0);
 
-	gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_container_add (GTK_CONTAINER (_window), vbox);
 
-    controls = gtk_hbox_new (false, 0);
+    _controls = gtk_hbox_new (false, 0);
 
-    gtk_box_pack_end (GTK_BOX (vbox), controls, false, false, 2);
+    gtk_box_pack_end (GTK_BOX (vbox), _controls, false, false, 2);
 
 	{
 		GdkColor color;
 
 		gdk_color_parse ("black", &color);
-		video_output = gtk_drawing_area_new ();
-		gtk_widget_modify_bg (GTK_WIDGET (video_output), GTK_STATE_NORMAL, &color);
-        gtk_widget_set_double_buffered (video_output, false);
+        _video_output = gtk_drawing_area_new ();
+        gtk_widget_modify_bg (GTK_WIDGET (_video_output), GTK_STATE_NORMAL, &color);
+        gtk_widget_set_double_buffered (_video_output, false);
 
-        gtk_box_pack_start (GTK_BOX (vbox), video_output, true, true, 0);
+        gtk_box_pack_start (GTK_BOX (vbox), _video_output, true, true, 0);
 
-		gtk_widget_set_size_request (video_output, 0x200, 0x100);
+        gtk_widget_set_size_request (_video_output, 0x200, 0x100);
 
-		g_signal_connect (video_output, "realize", G_CALLBACK (realize_cb), NULL);
+        g_signal_connect (_video_output, "realize", G_CALLBACK (realize_cb), NULL);
 
 	}
 
 	{
-          pause_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PAUSE);
+          _pause_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PAUSE);
 
-        g_signal_connect (G_OBJECT (pause_button), "clicked", G_CALLBACK (pause_cb), NULL);
+        g_signal_connect (G_OBJECT (_pause_button), "clicked", G_CALLBACK (pause_cb), NULL);
 
-        gtk_box_pack_start (GTK_BOX (controls), pause_button, false, false, 2);
+        gtk_box_pack_start (GTK_BOX (_controls), _pause_button, false, false, 2);
     }
     {
-          stop_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_STOP);
+          _stop_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_STOP);
 
-        g_signal_connect (G_OBJECT (stop_button), "clicked", G_CALLBACK (stop_cb), NULL);
+        g_signal_connect (G_OBJECT (_stop_button), "clicked", G_CALLBACK (stop_cb), NULL);
 
-        gtk_box_pack_start (GTK_BOX (controls), stop_button, false, false, 2);
+        gtk_box_pack_start (GTK_BOX (_controls), _stop_button, false, false, 2);
     }
 
     {
-        play_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PLAY);
+        _play_button = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PLAY);
 
-      g_signal_connect (G_OBJECT (play_button), "clicked", G_CALLBACK (pause_cb), NULL);
+      g_signal_connect (G_OBJECT (_play_button), "clicked", G_CALLBACK (pause_cb), NULL);
 
-      gtk_box_pack_start (GTK_BOX (controls), play_button, false, false, 2);
+      gtk_box_pack_start (GTK_BOX (_controls), _play_button, false, false, 2);
     }
 
     {
@@ -281,47 +227,47 @@ void Ui::start (Backend* back) {
 
         g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (subtitles_cb), NULL);
 
-        gtk_box_pack_start (GTK_BOX (controls), button, false, false, 2);
-        subtitles_button = button;
+        gtk_box_pack_start (GTK_BOX (_controls), button, false, false, 2);
+        _subtitles_button = button;
     }
 
 	{
         button = gtk_button_new_with_label ("Reset");
 		g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (reset_cb), NULL);
 
-        gtk_box_pack_start (GTK_BOX (controls), button, false, false, 2);
+        gtk_box_pack_start (GTK_BOX (_controls), button, false, false, 2);
 	}
 
     {
 		GtkObject *adjustment;
 		adjustment = gtk_adjustment_new (0, 0, 101, 1, 5, 1);
-		scale = gtk_hscale_new (GTK_ADJUSTMENT (adjustment));
+        _scale = gtk_hscale_new (GTK_ADJUSTMENT (adjustment));
 
-        gtk_box_pack_end (GTK_BOX (controls), scale, true, true, 2);
+        gtk_box_pack_end (GTK_BOX (_controls), _scale, true, true, 2);
 
-		g_signal_connect (G_OBJECT (scale), "change-value", G_CALLBACK (seek_cb), NULL);
+        g_signal_connect (G_OBJECT (_scale), "change-value", G_CALLBACK (seek_cb), NULL);
 	}
     {
         GtkObject *adjustment;
-        volume = gtk_volume_button_new ();
+        _volume = gtk_volume_button_new ();
         adjustment = gtk_adjustment_new (0, 0, 200, 1, 5, 1);
-        gtk_scale_button_set_adjustment(GTK_SCALE_BUTTON(volume), GTK_ADJUSTMENT(adjustment));
-        gtk_scale_button_set_value(GTK_SCALE_BUTTON(volume), 50);
-        gtk_box_pack_end (GTK_BOX (controls), volume, false, false, 2);
+        gtk_scale_button_set_adjustment(GTK_SCALE_BUTTON(_volume), GTK_ADJUSTMENT(adjustment));
+        gtk_scale_button_set_value(GTK_SCALE_BUTTON(_volume), 50);
+        gtk_box_pack_end (GTK_BOX (_controls), _volume, false, false, 2);
 
-        g_signal_connect (G_OBJECT (volume), "value-changed", G_CALLBACK (volume_cb), NULL);
+        g_signal_connect (G_OBJECT (_volume), "value-changed", G_CALLBACK (volume_cb), NULL);
     }
 
     {
-        labelProgression = gtk_label_new("00:00:00 / 00:00:00");
-        gtk_box_pack_end(GTK_BOX(controls), labelProgression, false, false, 2);
+        _labelProgression = gtk_label_new("00:00:00 / 00:00:00");
+        gtk_box_pack_end(GTK_BOX(_controls), _labelProgression, false, false, 2);
     }
 
-	gtk_widget_show_all (GTK_WIDGET (window));
-    gtk_widget_hide(play_button);
+    gtk_widget_show_all (GTK_WIDGET (_window));
+    gtk_widget_hide(_play_button);
 
 }
-inline std::string Ui::time2String(const guint64 time) {
+inline std::string Ui::time2String(const unsigned long time) {
     char buff[512];
     std::string buffString;
     std::string ret;
@@ -333,37 +279,32 @@ inline std::string Ui::time2String(const guint64 time) {
 }
 
 gboolean Ui::timeout (gpointer data) {
-	guint64 pos;
+    unsigned long pos;
 
-    pos = _back->backend_query_position ();
-	if (!DURATION_IS_VALID (duration))
-        duration = _back->backend_query_duration ();
+    pos = _back->queryPosition ();
+    if (!durationIsValid (_duration))
+        _duration = _back->queryDuration ();
 
-	if (!DURATION_IS_VALID (duration))
+    if (!durationIsValid (_duration))
         return true;
-    std::ostringstream s1, s2;
-    gtk_label_set_text(GTK_LABEL(labelProgression), std::string(time2String(_back->backend_query_position())+ " / "+
-                                                                time2String(_back->backend_query_duration())).c_str());
+
+    gtk_label_set_text(GTK_LABEL(_labelProgression), std::string(time2String(_back->queryPosition())+ " / "+
+                                                                time2String(_back->queryDuration())).c_str());
 	if (pos != 0) {
 		double value;
-		value = (pos * (((double) 100) / duration));
-		gtk_range_set_value (GTK_RANGE (scale), value);
+        value = (pos * (((double) 100) / _duration));
+        gtk_range_set_value (GTK_RANGE (_scale), value);
 	}
 
     return true;
 }
+
+bool Ui::durationIsValid(const unsigned int x) {
+    return (x != 0 && x != (const unsigned int) -1);
+}
 std::string Ui::getSrtFilename() const
 {
     return _srtFilename;
-}
-
-void Ui::setSrtFilename(const std::string &srtFilename)
-{
-    _srtFilename = srtFilename;
-}
-
-void Ui::setFileName(std::string s) {
-    _fileName = s;
 }
 
 std::string Ui::getFileName() {
@@ -372,13 +313,13 @@ std::string Ui::getFileName() {
 
 gboolean Ui::init (gpointer data) {
     if (!_ui->getFileName().empty()) {
-        gtk_window_set_title(window, _ui->getFileName().c_str());
-        _back->backend_play (_ui->getFileName(), _ui->getSrtFilename());
+        gtk_window_set_title(_window, _ui->getFileName().c_str());
+        _back->play (_ui->getFileName(), _ui->getSrtFilename());
     }
 
     g_timeout_add (300, timeout, NULL);
     if(_back->subtitlesIsHiding()) {
-        gtk_widget_hide(subtitles_button);
+        gtk_widget_hide(_subtitles_button);
     }
 
     return false;

@@ -1,6 +1,6 @@
-#include "gst-backend.h"
+#include "backend.h"
 
-static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
+gboolean Backend::bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
 	switch(GST_MESSAGE_TYPE(msg)) {
 		case GST_MESSAGE_EOS:
 			g_debug("end-of-stream");
@@ -22,16 +22,7 @@ static gboolean bus_cb(GstBus *bus, GstMessage *msg, gpointer data) {
     return true;
 }
 
-void Backend::backend_set_window(gpointer window_) {
-    _window = window_;
-}
-
-void Backend::stop()
-{
-    backend_pause();
-    backend_seek(0);
-}
-static void on_pad_added (GstElement *element, GstPad     *pad, gpointer    data) {
+void Backend::on_pad_added (GstElement *element, GstPad     *pad, gpointer    data) {
     GstPad *sinkpad;
     GstElement *decoder = (GstElement *) data;
 
@@ -42,6 +33,15 @@ static void on_pad_added (GstElement *element, GstPad     *pad, gpointer    data
 
     gst_pad_link (pad, sinkpad);
     gst_object_unref (sinkpad);
+}
+
+void Backend::setWindow(gpointer window_) {
+    _window = window_;
+}
+
+void Backend::stop() {
+    pause();
+    seek(0);
 }
 
 void Backend::createBusForMessages() {
@@ -56,32 +56,30 @@ void Backend::incrustVideo() {
         gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(_commands->getElement("videosink")), GPOINTER_TO_INT(_window));
     }
 }
-double Backend::getCurrentVolume() const
-{
+double Backend::getCurrentVolume() const {
     return _currentVolume;
 }
 
-void Backend::setCurrentVolume(double currentVolume)
-{
+void Backend::setCurrentVolume(double currentVolume) {
     _currentVolume = currentVolume;
 }
 
 
-void Backend::backend_setVolume(const double volume) {
+void Backend::setVolume(const double volume) {
     _currentVolume = volume;
     _commands->setElement("volume", "volume", volume);
 
 }
-void Backend::backend_volumeUp() {
-    backend_setVolume(_currentVolume+0.20 < 2 ? _currentVolume + 0.20 : _currentVolume);
+void Backend::volumeUp() {
+    setVolume(_currentVolume+0.20 < 2 ? _currentVolume + 0.20 : _currentVolume);
 }
 
-void Backend::backend_volumeDown() {
-    backend_setVolume(_currentVolume > 0 ? _currentVolume - 0.20 : 0);
+void Backend::volumeDown() {
+    setVolume(_currentVolume > 0 ? _currentVolume - 0.20 : 0);
 }
 
-void Backend::backend_play(const std::string filename, const std::string srtfilename) {
-	backend_stop();
+void Backend::play(const std::string filename, const std::string srtfilename) {
+    quit();
     _commands = new GStreamerCommands();
     _subtitlesIsHidding = srtfilename == "";
     if(!_subtitlesIsHidding) { // We have a subtitle
@@ -107,7 +105,7 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
 
     _commands->checkAllElements();
     _commands->setElement("source", "location", filename);
-    backend_setVolume(0.5);
+    setVolume(0.5);
     _commands->addAllElements();
     createBusForMessages();
 
@@ -143,23 +141,23 @@ void Backend::backend_play(const std::string filename, const std::string srtfile
     gst_element_set_state(_commands->getPipeline(), GST_STATE_PLAYING);
 }
 
-void Backend::backend_stop(void) {
+void Backend::quit(void) {
     if(_commands != 0 && _commands->getPipeline() != 0) {
         gst_element_set_state(_commands->getPipeline(), GST_STATE_NULL);
         delete _commands;
     }
 }
 
-void Backend::backend_pause(void) {
+void Backend::pause(void) {
     gst_element_set_state(_commands->getPipeline(), GST_STATE_PAUSED);
 }
 
-void Backend::backend_resume(void) {
+void Backend::resume(void) {
     gst_element_set_state(_commands->getPipeline(), GST_STATE_PLAYING);
 }
 
-void Backend::backend_reset(std::string filename, std::string srtfilename) {
-    backend_play(filename, srtfilename);
+void Backend::reset(std::string filename, std::string srtfilename) {
+    play(filename, srtfilename);
 }
 void Backend::showSubtitles(void) {
     _commands->setElement("subOverlay", "silent", false);
@@ -173,11 +171,11 @@ void Backend::hideSubtitles(void) {
     _subtitlesIsHidding = true;
 }
 
-bool Backend::subtitlesIsHiding() {
+bool Backend::subtitlesIsHiding(void) {
     return _subtitlesIsHidding;
 }
 
-void Backend::backend_seek(gint value) {
+void Backend::seek(gint value) {
     gst_element_seek(_commands->getPipeline(), 1.0,
 			GST_FORMAT_TIME,
             _seek_flags,
@@ -185,7 +183,7 @@ void Backend::backend_seek(gint value) {
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
-void Backend::backend_seek_absolute(guint64 value) {
+void Backend::absoluteSeek(unsigned long value) {
     gst_element_seek(_commands->getPipeline(), 1.0,
 			GST_FORMAT_TIME,
             _seek_flags,
@@ -193,7 +191,7 @@ void Backend::backend_seek_absolute(guint64 value) {
 			GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 }
 
-guint64 Backend::backend_query_position(void) {
+unsigned long Backend::queryPosition(void) {
 	GstFormat format = GST_FORMAT_TIME;
 	gint64 cur;
     bool result;
@@ -205,7 +203,7 @@ guint64 Backend::backend_query_position(void) {
 	return cur;
 }
 
-guint64 Backend::backend_query_duration(void) {
+unsigned long Backend::queryDuration(void) {
 	GstFormat format = GST_FORMAT_TIME;
 	gint64 cur;
     bool result;

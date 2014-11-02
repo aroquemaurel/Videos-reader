@@ -96,11 +96,15 @@ filesink location=videoOutput.ogv
 	raison de sa rapidité, de sa souplesse tout en restant extrêmement puissant et en utilisant le paradigme orienté objet.
 
 	L'application que j'ai développé ne permet de ne lire que des fichier au format \texttt{OGV} ou \texttt{Theora}, en raison des chaînes de traitement que j'ai
-	choisi d'utiliser. Il aurait été éventuellement possible d'utiliser \texttt{decodebin} afin d'être ouvert au maximum de formats possible, cependant celui-ci
-	rendait l'utilisation des sous-titres plus complexe.
+	choisi d'utiliser. Il aurait été éventuellement possible
+	d'utiliser \texttt{decodebin} afin d'être ouvert au
+	maximum de formats possible, mais j'ai choisi de rester
+	proche de l'ogg, étant donné la nature des vidéos que vous
+	nous avez fournis depuis le début de ce module.
 
 	Une autre solution permettant de mener ce projet à bien plus simplement aurait été l'utilisation de \texttt{playbin2}, cependant celui-ci n'étant pas
-	autorisé pour réaliser ce sujet, je me suis restreint au format \texttt{OGV}.
+	autorisé pour réaliser ce sujet, je ne m'en suis pas
+	servis. 
 
 	\subsection{Question 5}
 	\begin{lstlisting}[language=sh]
@@ -238,13 +242,13 @@ public:
 
 	Afin de pouvoir afficher ou non les sous-titres, il m'a suffit d'utiliser l'argument \texttt{silent} de \texttt{subtitleoverlay}.
 	\begin{lstlisting}[language=C++, caption=Affichage ou non des sous-titres]
-		// Désactive les sous-titres
-		g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL); 
-		// Active les sous-titres
-		g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", true, NULL); 
+// Désactive les sous-titres
+g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", false, NULL); 
+// Active les sous-titres
+g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", true, NULL); 
 
-		// Ou avec mon interface
-		_commands->setElement("subOverlay", "silent", false);
+// Ou avec mon interface
+_commands->setElement("subOverlay", "silent", false);
 
 	\end{lstlisting}
 	\appendix
