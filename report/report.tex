@@ -34,6 +34,40 @@
 
 \begin{document}
 	\maketitle
+	\section{Avant-propos}
+	L'archive que vous avez obtenu sur Moodle contient plusieurs fichiers organisés comme suit : 
+	\begin{description}
+		\item[\texttt{src/}] Contient les sources C++ du projet, celles-ci sont détaillées section \ref{src}.
+		\item[\texttt{player}] Le binaire du lecteur vidéo, compilé chez moi.
+		\item[\texttt{report\_AntoinedeRoquemaurel.pdf}] Le présent rapport que vous êtes en train de lire
+		\item[\texttt{ressources/}] Les vidéos et les sons utilisé en entrée d'une commande GStreamer. Celles-ci sont détaillées section \ref{ressources}.
+	\end{description}
+	\subsection{Sources}\label{src}
+	Les sources contiennent un certain nombre de fichier :
+	\begin{itemize}
+		\item Les .h contiennent les classes développée pour le player
+		\item Les .cpp sont les implémentations des précédentes classes
+		\item Le makefile permet de compiler le projet, à l'aide de la commande \texttt{make}.
+	\end{itemize}
+	\subsubsection{Détails des fichiers}
+	\begin{description}
+		\item[Fichier \texttt{Makefile}] Le fichier Makefile permettant de compiler le projet à l'aide de la commande \texttt{make}.
+		\item[Fichier \texttt{main.cpp}] Le point d'entrée de notre programme.
+		\item[Classe \texttt{Ui}] Contient la classe d'interface graphique à l'aide de GTK+. 
+		\item[Classe \texttt{Backend}] Contient la classe permettant de faire le lien avec GStreamer.
+		\item[Class \texttt{GStreamerCommand}] Une classe permettant de faire une abstraction supplémentaire à l'utilisation de la bibliothèque
+			GStreamer.
+		\item[Classe \texttt{Player}] La classe permettant de lancer le lecteur vidéo simplement.
+	\end{description}
+
+	\subsection{Ressources}\label{ressources}
+	Voici les vidéos utilisées pour tester le lecteur vidéo ou des commandes GStreamer : 
+	\begin{description}
+		\item[\texttt{video.ogv}] La vidéo fournie
+		\item[\texttt{video.srt}] Les sous-titres de la vidéo fournie
+		\item[\texttt{Thunderstruck.ogg}] Un fichier audio permettant de tester les commandes GStreamer
+		\item[\texttt{videoOutput.ogv}] La vidéo de sortie suite à la question 4.
+	\end{description}
 	\section{Partie I : en ligne de commande}
 	\subsection{Les formats OGV, Vorbis et Theora}
 	Avant de pouvoir définir ces trois formats, il parait important de définir le projet OGG.
@@ -251,6 +285,15 @@ g_object_set (G_OBJECT (_commands->getElement("subOverlay")), "silent", true, NU
 _commands->setElement("subOverlay", "silent", false);
 
 	\end{lstlisting}
+
+	\subsection{Reconnaissance des sous-titres}
+	Ce principe est actuellement utilisé dans les vidéos \textit{youtube} par Google, au vu des nombreuses erreurs qu'effectue ce système, on peut penser que
+	cela est particulièrement compliqué à mettre en place.
+
+	En effet, beaucoup de facteurs rentrent en ligne de compte, notamment la vitesse d'élocution, l'accent, la grammaire etc…
+
+	Néanmoins, nous pourrions penser à un système qui possède une reconnaissance vocale, analyse une phrase et l'injecte automatiquement dans le flux de données
+	afin d'en créer le sous-titre. La difficulté étant donc ce système de reconnaissance vocale.
 	\appendix
 	\lstlistoflistings
 	\listoffigures
