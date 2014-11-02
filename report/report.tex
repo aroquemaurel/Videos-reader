@@ -68,6 +68,19 @@
 		\item[\texttt{Thunderstruck.ogg}] Un fichier audio permettant de tester les commandes GStreamer
 		\item[\texttt{videoOutput.ogv}] La vidéo de sortie suite à la question 4.
 	\end{description}
+
+	\subsection{Compilation}
+	Vous pouvez recompiler le projet ou le nettoyer avec les commandes suivantes, en vous situant dans le dossier \texttt{src} : 
+	\begin{lstlisting}[language=Sh,numbers=none]
+$\$$ make
+$\$$ make clean
+	\end{lstlisting}
+
+	\subsection{Exécution}
+	Vous pouvez lancer l'exécution du player avec la commande suivante : 
+	\begin{lstlisting}[language=Sh]
+$\$$ ./player ressources/video.ogv ressources/video.srt 
+	\end{lstlisting}
 	\section{Partie I : en ligne de commande}
 	\subsection{Les formats OGV, Vorbis et Theora}
 	Avant de pouvoir définir ces trois formats, il parait important de définir le projet OGG.
