@@ -303,10 +303,23 @@ _commands->setElement("subOverlay", "silent", false);
 	Ce principe est actuellement utilisé dans les vidéos \textit{youtube} par Google, au vu des nombreuses erreurs qu'effectue ce système, on peut penser que
 	cela est particulièrement compliqué à mettre en place.
 
-	En effet, beaucoup de facteurs rentrent en ligne de compte, notamment la vitesse d'élocution, l'accent, la grammaire etc…
+	Néanmoins, nous pourrions penser à un système qui possède
+	une reconnaissance vocale, analyse une phrase, cette
+	phrase est traduite via l'api Google Translate, et l'injecte automatiquement dans le flux de données
+	afin d'en afficher le sous-titre français. La difficulté
+	étant donc ce système de reconnaissance vocale suivi
+	d'une traduction.
 
-	Néanmoins, nous pourrions penser à un système qui possède une reconnaissance vocale, analyse une phrase et l'injecte automatiquement dans le flux de données
-	afin d'en créer le sous-titre. La difficulté étant donc ce système de reconnaissance vocale.
+	Ce système est assez peu fiel, en effet, beaucoup de facteurs rentrent en ligne de
+	compte, notamment la vitesse d'élocution, l'accent, la
+	grammaire pour le côtés acquisition des sous-titres, mais
+	de nombreux autres problèmes peuvent intervenir dans la
+	traduction : Google Translate est actuellement peu
+	fiable, d'autant plus s'il se base sur des sous-titres
+	partiellement corrects en raison des erreurs précédentes.
+
+	Ce système est donc possible, mais n'apportera pas la
+	même qualité qu'une traduction manuelle.
 	\appendix
 	\lstlistoflistings
 	\listoffigures
